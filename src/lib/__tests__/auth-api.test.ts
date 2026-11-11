@@ -1,8 +1,9 @@
+import { friendlyError, validateEmail, validatePassword, validateUsername } from '../auth-api';
+
 jest.mock('../firebase', () => ({ auth: {}, functions: {} }));
 jest.mock('firebase/auth', () => ({}));
 jest.mock('firebase/functions', () => ({}));
 
-import { friendlyError, validateEmail, validatePassword, validateUsername } from '../auth-api';
 
 describe('auth validation', () => {
   it('validates usernames', () => {

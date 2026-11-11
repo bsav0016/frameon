@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ToastProvider } from '@/components/ui';
+import { useTheme } from '@/hooks/use-theme';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 
 SplashScreen.preventAutoHideAsync();
@@ -17,12 +18,25 @@ function RootNavigator() {
     if (!isLoading) SplashScreen.hideAsync();
   }, [isLoading]);
 
+  const theme = useTheme();
+  const detailOptions = {
+    headerShown: true,
+    headerBackTitle: 'Back',
+    headerTintColor: theme.primary,
+    headerStyle: { backgroundColor: theme.surface },
+    headerTitleStyle: { color: theme.text },
+    headerShadowVisible: false,
+  } as const;
+
   if (isLoading) return null;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={!!user}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="post/[id]" options={detailOptions} />
+        <Stack.Screen name="user/[uid]" options={detailOptions} />
+        <Stack.Screen name="settings" options={{ ...detailOptions, title: 'Settings' }} />
       </Stack.Protected>
       <Stack.Protected guard={!user}>
         <Stack.Screen name="(auth)" />
