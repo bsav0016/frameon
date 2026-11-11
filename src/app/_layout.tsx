@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -8,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ToastProvider } from '@/components/ui';
 import { useTheme } from '@/hooks/use-theme';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
+import { handleNotificationTap, registerForPush } from '@/lib/push';
 import { StripeGate } from '@/lib/stripe';
 
 SplashScreen.preventAutoHideAsync();
@@ -18,6 +20,20 @@ function RootNavigator() {
   useEffect(() => {
     if (!isLoading) SplashScreen.hideAsync();
   }, [isLoading]);
+
+  const uid = user?.uid;
+
+  useEffect(() => {
+    if (uid) registerForPush(uid);
+  }, [uid]);
+
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((r) => handleNotificationTap(r.notification.request.content.data));
+    // App launched by tapping a notification while it was closed.
+    const last = Notifications.getLastNotificationResponse();
+    if (last) handleNotificationTap(last.notification.request.content.data);
+    return () => sub.remove();
+  }, []);
 
   const theme = useTheme();
   const detailOptions = {

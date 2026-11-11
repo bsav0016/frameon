@@ -261,6 +261,25 @@ describe('reports', () => {
   });
 });
 
+describe('push device tokens', () => {
+  const tokenDoc = (db, uid, token = 'ExponentPushToken[abc]') => doc(db, 'users', uid, 'devices', token);
+
+  it('lets a user register and remove their own device', async () => {
+    await assertSucceeds(setDoc(tokenDoc(as(ALICE), ALICE), { platform: 'ios', createdAt: serverTimestamp() }));
+    await assertSucceeds(deleteDoc(tokenDoc(as(ALICE), ALICE)));
+  });
+
+  it('blocks registering or reading other users devices', async () => {
+    await assertFails(setDoc(tokenDoc(as(BOB), ALICE), { platform: 'ios', createdAt: serverTimestamp() }));
+    await assertFails(getDoc(tokenDoc(as(BOB), ALICE)));
+  });
+
+  it('rejects extra or invalid fields', async () => {
+    await assertFails(setDoc(tokenDoc(as(ALICE), ALICE), { platform: 'web', createdAt: serverTimestamp() }));
+    await assertFails(setDoc(tokenDoc(as(ALICE), ALICE), { platform: 'ios', createdAt: serverTimestamp(), admin: true }));
+  });
+});
+
 describe('anything else', () => {
   it('is denied', async () => {
     await assertFails(setDoc(doc(as(ALICE), 'whatever', 'x'), { a: 1 }));

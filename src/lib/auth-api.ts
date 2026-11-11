@@ -2,6 +2,7 @@ import { EmailAuthProvider, reauthenticateWithCredential, sendPasswordResetEmail
 import { httpsCallable } from 'firebase/functions';
 
 import { auth, functions } from './firebase';
+import { unregisterPush } from './push';
 
 export const USERNAME_PATTERN = /^[A-Za-z0-9_.]{3,20}$/;
 export const MIN_PASSWORD = 8;
@@ -53,7 +54,10 @@ export async function requestPasswordReset(email: string) {
   });
 }
 
-export const logout = () => signOut(auth);
+export async function logout() {
+  await unregisterPush();
+  await signOut(auth);
+}
 
 /** Deleting needs a fresh login (checked server-side too), so the user re-enters their password first. */
 export async function deleteMyAccount(password: string) {
@@ -61,6 +65,7 @@ export async function deleteMyAccount(password: string) {
   if (!user?.email) throw new Error('Not signed in');
   await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
   await user.getIdToken(true);
+  await unregisterPush();
   await httpsCallable(functions, 'deleteAccount')();
   await signOut(auth).catch(() => undefined);
 }

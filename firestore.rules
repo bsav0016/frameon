@@ -70,6 +70,16 @@ service cloud.firestore {
       allow read: if isUser(uid);
     }
 
+    // Push tokens: the device registers itself, the server reads them to send notifications.
+    match /users/{uid}/devices/{token} {
+      allow read: if isUser(uid);
+      allow create: if isUser(uid)
+        && hasExactly(['platform', 'createdAt'])
+        && request.resource.data.platform in ['ios', 'android']
+        && request.resource.data.createdAt == request.time;
+      allow delete: if isUser(uid);
+    }
+
     // ---------- follows ----------
     match /follows/{id} {
       allow read: if signedIn();
