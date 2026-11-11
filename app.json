@@ -19,8 +19,9 @@
     "android": {
       "package": "com.brainsavidge.frameonnew",
       "adaptiveIcon": {
-        "backgroundColor": "#E8D9A0",
-        "foregroundImage": "./assets/images/icon.png"
+        "backgroundImage": "./assets/images/android-background.png",
+        "foregroundImage": "./assets/images/android-foreground.png",
+        "monochromeImage": "./assets/images/android-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
     },
