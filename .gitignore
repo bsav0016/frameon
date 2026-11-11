@@ -49,3 +49,8 @@ functions/lib/
 functions/node_modules/
 
 functions/.env
+
+store-assets/tools/demo-art/
+store-assets/tools/demo-state.json
+
+store-assets/ios/_raw/
