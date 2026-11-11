@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "FrameOn",
+    "slug": "frameon",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "frameon",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "BrianSavidge.FrameOnNew",
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "FrameOn uses the camera so you can photograph your artwork and profile picture.",
+        "NSPhotoLibraryUsageDescription": "FrameOn uses your photo library so you can post artwork and choose a profile picture."
+      }
+    },
+    "android": {
+      "package": "com.brainsavidge.frameonnew",
+      "adaptiveIcon": {
+        "backgroundColor": "#E8D9A0",
+        "foregroundImage": "./assets/images/icon.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#E8D9A0",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 160
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "FrameOn uses your photo library so you can post artwork and choose a profile picture.",
+          "cameraPermission": "FrameOn uses the camera so you can photograph your artwork and profile picture."
+        }
+      ],
+      "expo-mail-composer",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.BrianSavidge.FrameOnNew",
+          "enableGooglePay": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
