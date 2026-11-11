@@ -41,7 +41,7 @@ export async function signInWithUsername(username: string, password: string) {
 }
 
 /** Creates the account on the server, then signs in with the same credentials. */
-export async function register(args: { username: string; email: string; password: string; name: string }) {
+export async function register(args: { username: string; email: string; password: string; name: string; acceptedTerms: boolean }) {
   await httpsCallable(functions, 'registerAccount')({ ...args, email: args.email.trim(), username: args.username.trim() });
   await signInWithUsername(args.username, args.password);
 }

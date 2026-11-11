@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { Avatar, Button, Screen, Text, TextField, useToast } from '@/components/ui';
@@ -8,7 +8,7 @@ import { spacing } from '@/constants/theme';
 import { updateProfile, uploadAvatar } from '@/lib/data/profiles';
 import { deleteMyAccount, friendlyError, logout } from '@/lib/auth-api';
 import { pickImage, prepareImage } from '@/lib/images';
-import { setUpPayouts } from '@/lib/payments-api';
+import { refreshPayoutStatus, setUpPayouts } from '@/lib/payments-api';
 import { useCanSell, useProfile, useUid } from '@/lib/queries';
 
 export default function SettingsScreen() {
@@ -28,6 +28,13 @@ export default function SettingsScreen() {
   const [deleting, setDeleting] = useState(false);
   const [payoutBusy, setPayoutBusy] = useState(false);
   const canSell = useCanSell();
+
+  // Stripe verification can finish after the user leaves the app, so re-check the status whenever Settings opens.
+  useEffect(() => {
+    refreshPayoutStatus()
+      .then(() => qc.invalidateQueries({ queryKey: ['canSell'] }))
+      .catch(() => undefined);
+  }, [qc]);
 
   const refresh = () => qc.invalidateQueries({ queryKey: ['profile', uid] });
 
@@ -110,6 +117,12 @@ export default function SettingsScreen() {
       </Text>
       {canSell.data ? null : <Button title="Set up payouts" onPress={payouts} loading={payoutBusy} />}
       <Button title="Orders" variant="secondary" onPress={() => router.push('/orders' as never)} />
+
+      <View style={styles.divider} />
+      <Text variant="heading">Safety and legal</Text>
+      <Button title="Blocked users" variant="secondary" onPress={() => router.push('/blocked' as never)} />
+      <Button title="Terms of Use" variant="secondary" onPress={() => router.push('/legal/terms' as never)} />
+      <Button title="Privacy Policy" variant="secondary" onPress={() => router.push('/legal/privacy' as never)} />
 
       <View style={styles.divider} />
       <Button title="Sign out" variant="secondary" onPress={() => logout()} />

@@ -20,11 +20,11 @@ export function EmptyState({ icon, title, message, actionLabel, onAction }: Empt
   return (
     <View style={styles.container}>
       <Ionicons name={icon} size={48} color={theme.textMuted} />
-      <Text variant="heading" style={styles.center}>
+      <Text variant="heading" style={[styles.center, styles.fill]}>
         {title}
       </Text>
       {message ? (
-        <Text muted style={styles.center}>
+        <Text muted style={[styles.center, styles.fill]}>
           {message}
         </Text>
       ) : null}
@@ -36,5 +36,7 @@ export function EmptyState({ icon, title, message, actionLabel, onAction }: Empt
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.sm },
   center: { textAlign: 'center' },
+  // A definite width stops Android from measuring the text narrower than it renders and clipping the last word.
+  fill: { alignSelf: 'stretch' },
   action: { marginTop: spacing.md, alignSelf: 'stretch' },
 });

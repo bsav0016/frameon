@@ -105,6 +105,8 @@ export default function PostDetailScreen() {
       },
     ]);
 
+  const reportTarget = (type: 'post' | 'comment', targetId: string) => router.push({ pathname: '/report', params: { type, id: targetId } } as never);
+
   const startEdit = () => {
     setCaption(p.caption);
     setPrice(forSale ? (p.priceCents / 100).toFixed(2) : '');
@@ -149,7 +151,18 @@ export default function PostDetailScreen() {
 
   return (
     <Screen scroll>
-      <Stack.Screen options={{ title: 'Post' }} />
+      <Stack.Screen
+        options={{
+          title: 'Post',
+          headerRight: isOwner
+            ? undefined
+            : () => (
+                <Pressable hitSlop={10} accessibilityRole="button" accessibilityLabel="Report post" onPress={() => reportTarget('post', id)}>
+                  <Ionicons name="flag-outline" size={22} color={theme.text} />
+                </Pressable>
+              ),
+        }}
+      />
       <Pressable style={styles.owner} accessibilityRole="button" accessibilityLabel={`View ${p.ownerUsername}'s profile`} onPress={() => router.push(userHref(p.ownerUid))}>
         <Avatar uri={owner.data?.photoURL} name={p.ownerUsername} size={40} />
         <View style={styles.flex}>
@@ -231,6 +244,11 @@ export default function PostDetailScreen() {
               {timeAgo(c.createdAt)}
             </Text>
           </View>
+          {c.authorUid !== uid ? (
+            <Pressable hitSlop={8} accessibilityRole="button" accessibilityLabel="Report comment" onPress={() => reportTarget('comment', `${id}/${c.id}`)}>
+              <Ionicons name="flag-outline" size={18} color={theme.textMuted} />
+            </Pressable>
+          ) : null}
           {c.authorUid === uid || isOwner ? (
             <Pressable hitSlop={8} accessibilityRole="button" accessibilityLabel="Delete comment" onPress={() => removeComment(c.id)}>
               <Ionicons name="trash-outline" size={18} color={theme.textMuted} />

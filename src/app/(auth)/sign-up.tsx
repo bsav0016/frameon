@@ -1,8 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button, Screen, Text, TextField, useToast } from '@/components/ui';
+import { useTheme } from '@/hooks/use-theme';
 import { friendlyError, isUsernameAvailable, register, validateEmail, validatePassword, validateUsername } from '@/lib/auth-api';
 
 export default function SignUpScreen() {
@@ -10,6 +12,8 @@ export default function SignUpScreen() {
   const [form, setForm] = useState({ username: '', name: '', email: '', password: '', confirm: '' });
   const [errors, setErrors] = useState<Partial<Record<keyof typeof form, string>>>({});
   const [loading, setLoading] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+  const theme = useTheme();
   const set = (key: keyof typeof form) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
 
   const submit = async () => {
@@ -29,7 +33,7 @@ export default function SignUpScreen() {
         setLoading(false);
         return;
       }
-      await register(form);
+      await register({ ...form, acceptedTerms: accepted });
     } catch (e) {
       toast(friendlyError(e), 'error');
       setLoading(false);
@@ -44,10 +48,26 @@ export default function SignUpScreen() {
       <TextField label="Email" value={form.email} onChangeText={set('email')} error={errors.email} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" autoComplete="email" />
       <TextField label="Password" value={form.password} onChangeText={set('password')} error={errors.password} secureTextEntry autoComplete="new-password" />
       <TextField label="Confirm password" value={form.confirm} onChangeText={set('confirm')} error={errors.confirm} secureTextEntry autoComplete="new-password" />
-      <Text variant="caption" muted>
-        By creating an account you agree to the Terms of Use. Objectionable content is not tolerated.
-      </Text>
-      <Button title="Create account" onPress={submit} loading={loading} />
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: accepted }}
+        accessibilityLabel="I agree to the Terms of Use and Privacy Policy"
+        onPress={() => setAccepted((a) => !a)}
+        style={styles.terms}>
+        <Ionicons name={accepted ? 'checkbox' : 'square-outline'} size={24} color={theme.primary} />
+        <Text variant="caption" muted style={styles.flex}>
+          I agree to the{' '}
+          <Link href={{ pathname: '/legal/[doc]', params: { doc: 'terms' } }} style={{ color: theme.primary }}>
+            Terms of Use
+          </Link>{' '}
+          and{' '}
+          <Link href={{ pathname: '/legal/[doc]', params: { doc: 'privacy' } }} style={{ color: theme.primary }}>
+            Privacy Policy
+          </Link>
+          . Objectionable content and abusive users are not tolerated.
+        </Text>
+      </Pressable>
+      <Button title="Create account" onPress={submit} loading={loading} disabled={!accepted} />
       <View style={styles.links}>
         <Link href="/sign-in" style={styles.link}>
           <Text variant="label">I already have an account</Text>
@@ -58,6 +78,8 @@ export default function SignUpScreen() {
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  terms: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   links: { alignItems: 'center', marginTop: 8 },
   link: { padding: 8 },
 });

@@ -41,7 +41,10 @@ function RootNavigator() {
         <Stack.Screen name="checkout/[postId]" options={{ ...detailOptions, title: 'Checkout' }} />
         <Stack.Screen name="orders" options={{ ...detailOptions, title: 'Orders' }} />
         <Stack.Screen name="review/[sellerUid]" options={{ ...detailOptions, title: 'Review seller' }} />
+        <Stack.Screen name="report" options={{ ...detailOptions, title: 'Report' }} />
+        <Stack.Screen name="blocked" options={{ ...detailOptions, title: 'Blocked users' }} />
       </Stack.Protected>
+      <Stack.Screen name="legal/[doc]" options={detailOptions} />
       <Stack.Protected guard={!user}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>

@@ -1,14 +1,12 @@
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
-import { defineSecret } from 'firebase-functions/params';
 import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
-import Stripe from 'stripe';
+import type Stripe from 'stripe';
+
+import { getStripe as stripe, stripeKey, webhookSecret } from './stripe';
 
 const db = getFirestore();
 const REGION = 'us-central1';
-const stripeKey = defineSecret('STRIPE_SECRET_KEY');
-const webhookSecret = defineSecret('STRIPE_WEBHOOK_SECRET');
-const stripe = () => new Stripe(stripeKey.value());
 
 // Total fee shown to sellers in the app: 5% of the price. Stripe's own fee is paid out of it.
 const APP_FEE_RATE = 0.05;

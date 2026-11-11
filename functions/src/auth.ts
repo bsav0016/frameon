@@ -2,7 +2,10 @@ import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { defineString } from 'firebase-functions/params';
+import { logger } from 'firebase-functions/v2';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+
+import { getStripe, stripeKey } from './stripe';
 
 const db = getFirestore();
 const WEB_API_KEY = defineString('WEB_API_KEY');
@@ -10,6 +13,8 @@ const WEB_API_KEY = defineString('WEB_API_KEY');
 const opts = { region: 'us-central1', maxInstances: 20, invoker: 'public' as const };
 
 const USERNAME = /^[A-Za-z0-9_.]{3,20}$/;
+// Bump when the Terms of Use change materially, so we can tell who accepted which version.
+const TERMS_VERSION = '2026-11-11';
 const MAX_FAILURES = 5;
 const LOCK_MS = 15 * 60 * 1000;
 // One message for every failure so the endpoint cannot be used to discover which usernames exist.
@@ -34,6 +39,7 @@ export const registerAccount = onCall(opts, async (req) => {
   const name = typeof req.data?.name === 'string' ? req.data.name.trim().slice(0, 50) : '';
   if (!USERNAME.test(username)) throw new HttpsError('invalid-argument', 'Usernames are 3-20 letters, numbers, dots or underscores.');
   if (password.length < 8) throw new HttpsError('invalid-argument', 'Password must be at least 8 characters.');
+  if (req.data?.acceptedTerms !== true) throw new HttpsError('failed-precondition', 'You must accept the Terms of Use to create an account.');
 
   const lower = username.toLowerCase();
   const usernameRef = db.doc(`usernames/${lower}`);
@@ -64,7 +70,7 @@ export const registerAccount = onCall(opts, async (req) => {
         sellerRatingCount: 0,
         createdAt: FieldValue.serverTimestamp(),
       });
-      tx.create(db.doc(`users/${uid}`), { email, chargesEnabled: false, createdAt: FieldValue.serverTimestamp() });
+      tx.create(db.doc(`users/${uid}`), { email, chargesEnabled: false, termsAcceptedAt: FieldValue.serverTimestamp(), termsVersion: TERMS_VERSION, createdAt: FieldValue.serverTimestamp() });
     });
   } catch (e) {
     await getAuth().deleteUser(uid).catch(() => undefined); // do not leave an orphan Auth user behind
@@ -113,7 +119,7 @@ export const signInWithUsername = onCall(opts, async (req) => {
  * Deletes the caller's account and content (App Store requirement). Orders are kept because the buyer or
  * seller on the other side still needs the record. Post subcollections and photos go via onPostDeleted.
  */
-export const deleteAccount = onCall({ ...opts, timeoutSeconds: 300 }, async (req) => {
+export const deleteAccount = onCall({ ...opts, timeoutSeconds: 300, secrets: [stripeKey] }, async (req) => {
   const uid = req.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', 'Sign in first.');
   // Require a login within the last 5 minutes so a stolen idle session cannot delete the account.
@@ -122,6 +128,7 @@ export const deleteAccount = onCall({ ...opts, timeoutSeconds: 300 }, async (req
   }
 
   const profile = (await db.doc(`profiles/${uid}`).get()).data() as { username?: string } | undefined;
+  const stripeAccountId = ((await db.doc(`users/${uid}`).get()).data() as { stripeAccountId?: string } | undefined)?.stripeAccountId;
 
   const posts = await db.collection('posts').where('ownerUid', '==', uid).get();
   for (const p of posts.docs) await db.recursiveDelete(p.ref);
@@ -133,6 +140,9 @@ export const deleteAccount = onCall({ ...opts, timeoutSeconds: 300 }, async (req
     const snap = await db.collection(col).where(field, '==', uid).get();
     await Promise.all(snap.docs.map((d) => d.ref.delete()));
   }
+
+  // Remove the seller's Stripe account. Stripe refuses if money is still owed; that must not block deletion.
+  if (stripeAccountId) await getStripe().accounts.del(stripeAccountId).catch((e) => logger.warn('could not delete Stripe account', { stripeAccountId, e }));
 
   await db.recursiveDelete(db.collection(`notifications/${uid}/items`));
   if (profile?.username) await db.doc(`usernames/${profile.username.toLowerCase()}`).delete();
