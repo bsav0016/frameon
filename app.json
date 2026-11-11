@@ -48,6 +48,12 @@
           "merchantIdentifier": "merchant.BrianSavidge.FrameOnNew",
           "enableGooglePay": false
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#8B5A2B"
+        }
       ]
     ],
     "experiments": {

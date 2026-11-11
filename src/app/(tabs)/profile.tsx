@@ -1,9 +1,6 @@
-import { EmptyState, Screen } from '@/components/ui';
+import { ProfileView } from '@/components/profile-view';
+import { useUid } from '@/lib/queries';
 
 export default function ProfileScreen() {
-  return (
-    <Screen>
-      <EmptyState icon="person-circle-outline" title="Your profile" message="Your posts, followers and seller rating." />
-    </Screen>
-  );
+  return <ProfileView uid={useUid()} />;
 }

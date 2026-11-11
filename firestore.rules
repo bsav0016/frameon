@@ -1,0 +1,215 @@
+rules_version = '2';
+
+// Trust model
+// - Clients may only write their own content (profile text, posts, ratings, comments, follows, blocks, reports).
+// - Anything that involves money, stock, counters, notifications or another user's data is written by Cloud
+//   Functions through the Admin SDK, which bypasses these rules.
+// - Everything not matched below is denied (usernames, purchases, orders writes, users writes, ...).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isUser(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function docs() {
+      return /databases/$(database)/documents;
+    }
+
+    function hasExactly(keys) {
+      return request.resource.data.keys().hasOnly(keys) && request.resource.data.keys().hasAll(keys);
+    }
+
+    function changesOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    function myUsername() {
+      return get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.username;
+    }
+
+    function isStars(v) {
+      return v is int && v >= 1 && v <= 5;
+    }
+
+    function isShortText(v, max) {
+      return v is string && v.size() <= max;
+    }
+
+    function sellerCanSell() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('chargesEnabled', false) == true;
+    }
+
+    // price 0 + quantity 0 means "not for sale". Otherwise Stripe's $0.50 minimum applies, and the seller
+    // must have finished Stripe onboarding (users/{uid}.chargesEnabled, written by the server).
+    function validSale(price, quantity, minQuantity) {
+      return price is int && quantity is int && (
+        (price == 0 && quantity == 0) ||
+        (price >= 50 && price <= 1000000 && quantity >= minQuantity && quantity <= 10000 && sellerCanSell())
+      );
+    }
+
+    // ---------- profiles (public) ----------
+    match /profiles/{uid} {
+      allow read: if signedIn();
+      // Created, deleted and counted by the server. Owners can only edit presentation fields.
+      allow update: if isUser(uid)
+        && changesOnly(['name', 'bio', 'photoURL'])
+        && isShortText(request.resource.data.name, 50)
+        && isShortText(request.resource.data.bio, 240)
+        && (request.resource.data.photoURL == null || isShortText(request.resource.data.photoURL, 600));
+    }
+
+    // ---------- users (private: email, Stripe ids) ----------
+    match /users/{uid} {
+      allow read: if isUser(uid);
+    }
+
+    // Push tokens: the device registers itself, the server reads them to send notifications.
+    match /users/{uid}/devices/{token} {
+      allow read: if isUser(uid);
+      allow create: if isUser(uid)
+        && hasExactly(['platform', 'createdAt'])
+        && request.resource.data.platform in ['ios', 'android']
+        && request.resource.data.createdAt == request.time;
+      allow delete: if isUser(uid);
+    }
+
+    // ---------- follows ----------
+    match /follows/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && hasExactly(['follower', 'followee', 'createdAt'])
+        && request.resource.data.follower == request.auth.uid
+        && request.resource.data.followee is string
+        && request.resource.data.followee != request.auth.uid
+        && id == request.auth.uid + '_' + request.resource.data.followee
+        && request.resource.data.createdAt == request.time
+        && exists(/databases/$(database)/documents/profiles/$(request.resource.data.followee));
+      allow delete: if isUser(resource.data.follower);
+    }
+
+    // ---------- blocks (private to the blocker) ----------
+    match /blocks/{id} {
+      allow read: if isUser(resource.data.blocker);
+      allow create: if signedIn()
+        && hasExactly(['blocker', 'blocked', 'createdAt'])
+        && request.resource.data.blocker == request.auth.uid
+        && request.resource.data.blocked is string
+        && request.resource.data.blocked != request.auth.uid
+        && id == request.auth.uid + '_' + request.resource.data.blocked
+        && request.resource.data.createdAt == request.time;
+      allow delete: if isUser(resource.data.blocker);
+    }
+
+    // ---------- posts ----------
+    match /posts/{postId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && hasExactly(['ownerUid', 'ownerUsername', 'caption', 'imagePath', 'imageURL', 'priceCents', 'quantity',
+                       'createdAt', 'ratingSum', 'ratingCount', 'commentCount'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUsername == myUsername()
+        && isShortText(request.resource.data.caption, 2200)
+        && request.resource.data.imagePath is string
+        && request.resource.data.imagePath.matches('posts/' + request.auth.uid + '/.*')
+        && isShortText(request.resource.data.imageURL, 1000)
+        && validSale(request.resource.data.priceCents, request.resource.data.quantity, 1)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.ratingSum == 0
+        && request.resource.data.ratingCount == 0
+        && request.resource.data.commentCount == 0;
+
+      // Owners can edit text and the listing. Counters, owner and image never change from the client.
+      allow update: if isUser(resource.data.ownerUid)
+        && changesOnly(['caption', 'priceCents', 'quantity'])
+        && isShortText(request.resource.data.caption, 2200)
+        && validSale(request.resource.data.priceCents, request.resource.data.quantity, 0);
+
+      allow delete: if isUser(resource.data.ownerUid);
+
+      // One 1-5 star rating per user per post, not on your own post. Aggregates are maintained by a trigger.
+      match /ratings/{uid} {
+        allow read: if signedIn();
+        allow create: if isUser(uid)
+          && hasExactly(['stars', 'username', 'updatedAt'])
+          && isStars(request.resource.data.stars)
+          && request.resource.data.username == myUsername()
+          && request.resource.data.updatedAt == request.time
+          && get(/databases/$(database)/documents/posts/$(postId)).data.ownerUid != uid;
+        allow update: if isUser(uid)
+          && changesOnly(['stars', 'updatedAt'])
+          && isStars(request.resource.data.stars)
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isUser(uid);
+      }
+
+      match /comments/{commentId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && hasExactly(['authorUid', 'username', 'text', 'createdAt'])
+          && request.resource.data.authorUid == request.auth.uid
+          && request.resource.data.username == myUsername()
+          && request.resource.data.text is string
+          && request.resource.data.text.size() >= 1
+          && request.resource.data.text.size() <= 500
+          && request.resource.data.createdAt == request.time;
+        allow delete: if isUser(resource.data.authorUid)
+          || isUser(get(/databases/$(database)/documents/posts/$(postId)).data.ownerUid);
+      }
+    }
+
+    // ---------- seller reviews: only buyers (purchases/{seller}_{buyer}, written by the webhook) ----------
+    match /sellerReviews/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && hasExactly(['sellerUid', 'raterUid', 'raterUsername', 'stars', 'comment', 'createdAt', 'updatedAt'])
+        && request.resource.data.raterUid == request.auth.uid
+        && request.resource.data.sellerUid is string
+        && request.resource.data.sellerUid != request.auth.uid
+        && id == request.resource.data.sellerUid + '_' + request.auth.uid
+        && exists(/databases/$(database)/documents/purchases/$(id))
+        && request.resource.data.raterUsername == myUsername()
+        && isStars(request.resource.data.stars)
+        && isShortText(request.resource.data.comment, 500)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isUser(resource.data.raterUid)
+        && changesOnly(['stars', 'comment', 'updatedAt'])
+        && isStars(request.resource.data.stars)
+        && isShortText(request.resource.data.comment, 500)
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isUser(resource.data.raterUid);
+    }
+
+    // ---------- orders (server-written; shipping address is visible to the two parties only) ----------
+    match /orders/{orderId} {
+      allow read: if isUser(resource.data.buyerUid) || isUser(resource.data.sellerUid);
+    }
+
+    // ---------- notifications (server-written; the owner can mark read or dismiss) ----------
+    match /notifications/{uid}/items/{id} {
+      allow read: if isUser(uid);
+      allow update: if isUser(uid) && changesOnly(['read']) && request.resource.data.read is bool;
+      allow delete: if isUser(uid);
+    }
+
+    // ---------- reports (write-only for clients; reviewed by the developer) ----------
+    match /reports/{id} {
+      allow create: if signedIn()
+        && hasExactly(['reporterUid', 'targetType', 'targetId', 'reason', 'details', 'createdAt'])
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.targetType in ['post', 'comment', 'user']
+        && request.resource.data.targetId is string
+        && request.resource.data.reason in ['spam', 'inappropriate', 'counterfeit', 'harassment', 'other']
+        && isShortText(request.resource.data.details, 500)
+        && request.resource.data.createdAt == request.time;
+    }
+  }
+}
