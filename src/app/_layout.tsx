@@ -51,6 +51,8 @@ function RootNavigator() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      {/* "/" is the same for everyone and just forwards to the right place, so a cold start never lands on a protected route. */}
+      <Stack.Screen name="index" />
       <Stack.Protected guard={!!user}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="post/[id]" options={detailOptions} />
