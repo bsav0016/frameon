@@ -25,11 +25,6 @@
       ]
     },
     {
-      "collectionGroup": "comments",
-      "queryScope": "COLLECTION",
-      "fields": [{ "fieldPath": "createdAt", "order": "ASCENDING" }]
-    },
-    {
       "collectionGroup": "sellerReviews",
       "queryScope": "COLLECTION",
       "fields": [
