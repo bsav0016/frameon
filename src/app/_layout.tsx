@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ToastProvider } from '@/components/ui';
 import { useTheme } from '@/hooks/use-theme';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
+import { StripeGate } from '@/lib/stripe';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -37,6 +38,9 @@ function RootNavigator() {
         <Stack.Screen name="post/[id]" options={detailOptions} />
         <Stack.Screen name="user/[uid]" options={detailOptions} />
         <Stack.Screen name="settings" options={{ ...detailOptions, title: 'Settings' }} />
+        <Stack.Screen name="checkout/[postId]" options={{ ...detailOptions, title: 'Checkout' }} />
+        <Stack.Screen name="orders" options={{ ...detailOptions, title: 'Orders' }} />
+        <Stack.Screen name="review/[sellerUid]" options={{ ...detailOptions, title: 'Review seller' }} />
       </Stack.Protected>
       <Stack.Protected guard={!user}>
         <Stack.Screen name="(auth)" />
@@ -53,7 +57,9 @@ export default function RootLayout() {
         <AuthProvider>
           <ToastProvider>
             <StatusBar style="auto" />
-            <RootNavigator />
+            <StripeGate>
+              <RootNavigator />
+            </StripeGate>
           </ToastProvider>
         </AuthProvider>
       </QueryClientProvider>

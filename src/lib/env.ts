@@ -9,6 +9,7 @@ const schema = z.object({
   firebaseStorageBucket: z.string().min(1),
   firebaseMessagingSenderId: z.string().min(1),
   firebaseAppId: z.string().min(1),
+  stripePublishableKey: z.string().startsWith('pk_'),
 });
 
 export type Env = z.infer<typeof schema>;
@@ -21,6 +22,7 @@ export function readEnv(): Env {
     firebaseStorageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
     firebaseMessagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
     firebaseAppId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+    stripePublishableKey: process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   });
   if (!result.success) {
     const missing = result.error.issues.map((i) => i.path.join('.')).join(', ');

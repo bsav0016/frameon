@@ -181,6 +181,10 @@ export default function PostDetailScreen() {
         </View>
       ) : null}
 
+      {forSale && !isOwner && !editing ? (
+        <Button title={`Buy for ${formatPrice(p.priceCents)}`} onPress={() => router.push(`/checkout/${id}` as never)} />
+      ) : null}
+
       {editing ? (
         <>
           <TextField label="Caption" value={caption} onChangeText={setCaption} multiline maxLength={2200} style={styles.multiline} />

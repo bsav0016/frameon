@@ -38,7 +38,7 @@ export default function NotificationsScreen() {
     }, [uid]),
   );
 
-  const open = (n: AppNotification) => router.push(n.postId ? postHref(n.postId) : userHref(n.fromUid));
+  const open = (n: AppNotification) => router.push(n.type === 'purchase' ? ('/orders' as never) : n.postId ? postHref(n.postId) : userHref(n.fromUid));
 
   return (
     <FlatList

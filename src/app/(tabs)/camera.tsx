@@ -97,7 +97,7 @@ export default function PostScreen() {
         </>
       ) : (
         <Text variant="caption" muted>
-          Selling art needs a connected payout account. That setup arrives with payments.
+          To sell art, set up payouts under the Settings screen on your Profile tab.
         </Text>
       )}
       <Button title="Post" onPress={submit} loading={posting} />

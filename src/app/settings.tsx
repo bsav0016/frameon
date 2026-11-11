@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
@@ -7,7 +8,8 @@ import { spacing } from '@/constants/theme';
 import { updateProfile, uploadAvatar } from '@/lib/data/profiles';
 import { deleteMyAccount, friendlyError, logout } from '@/lib/auth-api';
 import { pickImage, prepareImage } from '@/lib/images';
-import { useProfile, useUid } from '@/lib/queries';
+import { setUpPayouts } from '@/lib/payments-api';
+import { useCanSell, useProfile, useUid } from '@/lib/queries';
 
 export default function SettingsScreen() {
   const toast = useToast();
@@ -24,6 +26,8 @@ export default function SettingsScreen() {
   const [confirming, setConfirming] = useState(false);
   const [password, setPassword] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [payoutBusy, setPayoutBusy] = useState(false);
+  const canSell = useCanSell();
 
   const refresh = () => qc.invalidateQueries({ queryKey: ['profile', uid] });
 
@@ -52,6 +56,18 @@ export default function SettingsScreen() {
       toast(e instanceof Error && e.message.includes('access') ? e.message : 'Could not update your photo.', 'error');
     }
     setAvatarBusy(false);
+  };
+
+  const payouts = async () => {
+    setPayoutBusy(true);
+    try {
+      const enabled = await setUpPayouts();
+      await qc.invalidateQueries({ queryKey: ['canSell'] });
+      toast(enabled ? 'Payouts are ready' : 'Setup is not finished yet. Tap again to continue.', enabled ? 'success' : 'info');
+    } catch (e) {
+      toast(friendlyError(e), 'error');
+    }
+    setPayoutBusy(false);
   };
 
   const remove = async () => {
@@ -86,6 +102,14 @@ export default function SettingsScreen() {
       <TextField label="Name" value={name} onChangeText={setName} maxLength={50} />
       <TextField label="Bio" value={bio} onChangeText={setBio} maxLength={240} multiline style={styles.bio} />
       <Button title="Save" onPress={save} loading={saving} />
+
+      <View style={styles.divider} />
+      <Text variant="heading">Selling</Text>
+      <Text variant="caption" muted>
+        {canSell.data ? 'Payouts are set up. You can list art for sale when you post.' : 'Connect a payout account with Stripe to list art for sale. FrameOn keeps a 5% fee, which includes Stripe processing.'}
+      </Text>
+      {canSell.data ? null : <Button title="Set up payouts" onPress={payouts} loading={payoutBusy} />}
+      <Button title="Orders" variant="secondary" onPress={() => router.push('/orders' as never)} />
 
       <View style={styles.divider} />
       <Button title="Sign out" variant="secondary" onPress={() => logout()} />
