@@ -20,7 +20,8 @@ Everything the code needs is done except the items below, which need your accoun
 - [ ] Age rating: user-generated content, so answer the UGC questions honestly (report, block, 24h review, terms acceptance, account deletion are all implemented).
 - [ ] App Privacy answers: email, username, name, photos, user content, purchases and shipping address are collected and linked to the user; none used for tracking.
 - [ ] Review notes: give Apple a demo account and explain how to reach report, block and delete account (Settings). Selling needs Stripe test onboarding, so say sellers are optional.
-- [ ] Screenshots from a dev build on 6.9" and 6.5" iPhones; Android phone screenshots; feature graphic.
+- [x] Screenshots, icon and feature graphic are in `store-assets/` (see its README). The iPhone images are web renders of the app; swap in real-device captures from the dev build if you prefer.
+- [ ] Upload: iPhone 6.9" set to App Store Connect, `store-assets/android/*` to the Play listing, `store-assets/icon/icon-1024.png` if asked for a marketing icon.
 
 ## 4. Before going live (security)
 - [ ] Deploy rules and functions: `npx firebase deploy --project frameonnew`.

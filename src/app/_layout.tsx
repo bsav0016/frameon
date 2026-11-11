@@ -4,6 +4,7 @@ import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ToastProvider } from '@/components/ui';
@@ -28,6 +29,7 @@ function RootNavigator() {
   }, [uid]);
 
   useEffect(() => {
+    if (Platform.OS === 'web') return; // notification APIs do not exist on web
     const sub = Notifications.addNotificationResponseReceivedListener((r) => handleNotificationTap(r.notification.request.content.data));
     // App launched by tapping a notification while it was closed.
     const last = Notifications.getLastNotificationResponse();
