@@ -15,7 +15,7 @@ Everything in here is generated, so it can be rebuilt when the design or the app
   Run `python store-assets/tools/build_icons.py` and `python store-assets/tools/build_play_graphics.py`.
 - **Artwork for the screenshots:** `tools/demo_art.py` paints 8 pieces procedurally (no stock images).
 - **Demo community:** `tools/seed-demo.mjs seed` creates four demo accounts, eight posts, follows, ratings and comments in the
-  Firebase project (password `Demo-Frame-2026!`, sign in as `avery_lane`); `avatars` adds profile photos; `cleanup` deletes
+  Firebase project (sign in as `avery_lane`; the random password for that run is saved in the gitignored `tools/demo-state.json`); `avatars` adds profile photos; `cleanup` deletes
   everything again. The demo artists get the Stripe `chargesEnabled` seller flag through gcloud so prices show. The demo accounts
   were deleted after the captures, so run `seed` again before re-shooting.
 - **iPhone screenshots:** the web build of the same code (`npx expo export --platform web`), captured at exact iPhone sizes

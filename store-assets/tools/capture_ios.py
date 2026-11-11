@@ -65,7 +65,7 @@ const fs = require('fs');
 
   await page.goto(base + '/sign-in');
   await page.getByLabel('Username').fill('avery_lane');
-  await page.getByLabel('Password').fill('Demo-Frame-2026!');
+  await page.getByLabel('Password').fill(state.password);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await page.getByText('elena.moreau').first().waitFor({ timeout: 30000 });
   await shot('1-home');

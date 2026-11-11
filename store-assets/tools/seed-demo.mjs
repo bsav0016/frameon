@@ -3,6 +3,7 @@
 // Everything goes through the same callables and security rules as the real app, except the demo artists'
 // `chargesEnabled` seller flag, which normally comes from Stripe onboarding and is set here with gcloud credentials.
 import { execSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -33,8 +34,10 @@ const fns = getFunctions(app, 'us-central1');
 const storage = getStorage(app);
 const call = (name, data) => httpsCallable(fns, name)(data).then((r) => r.data);
 
-const PASSWORD = 'Demo-Frame-2026!';
 const STATE = join(here, 'demo-state.json');
+// A fresh random password per seeding run, kept only in the gitignored state file (never committed).
+const saved = existsSync(STATE) ? JSON.parse(readFileSync(STATE, 'utf8')) : {};
+const PASSWORD = saved.password ?? `Demo-${randomBytes(9).toString('base64url')}-1!`;
 const ART = join(here, 'demo-art');
 
 const USERS = {
@@ -101,7 +104,7 @@ function setSellerFlag(uid) {
 }
 
 async function seed() {
-  const state = { uids: {}, posts: {} };
+  const state = { password: PASSWORD, uids: {}, posts: {} };
   for (const [key, u] of Object.entries(USERS)) {
     await call('registerAccount', { username: u.username, email: `demo+${key}@example.com`, password: PASSWORD, name: u.name, acceptedTerms: true });
     state.uids[key] = await signInAs(key);
@@ -141,7 +144,7 @@ async function seed() {
     console.log('interacted', key);
   }
   await signOut(auth);
-  console.log('seeded. Sign in as', USERS.avery.username, 'with', PASSWORD);
+  console.log('seeded. Sign in as', USERS.avery.username, '(password is in demo-state.json)');
 }
 
 async function cleanup() {
@@ -154,7 +157,7 @@ async function cleanup() {
       console.log('skip', USERS[key].username, e.code ?? e.message);
     }
   }
-  if (existsSync(STATE)) writeFileSync(STATE, '{}');
+  if (existsSync(STATE)) writeFileSync(STATE, '{}'); // forget the password along with the accounts
   process.exit(0);
 }
 
