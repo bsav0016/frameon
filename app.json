@@ -65,6 +65,17 @@
       "bundler": "metro",
       "output": "single",
       "favicon": "./assets/images/favicon.png"
-    }
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "e3ca509d-d2ca-4ad2-8769-71faa928d9b3"
+      }
+    },
+    "owner": "bsav0016"
   }
 }
