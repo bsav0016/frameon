@@ -104,3 +104,4 @@ export const onPostDeleted = onDocumentDeleted({ ...opts, document: 'posts/{post
     }
   }
 });
+export * from './auth';
