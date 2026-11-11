@@ -56,3 +56,6 @@ store-assets/tools/demo-state.json
 store-assets/ios/_raw/
 
 site-out/
+
+# Firebase Android config: supplied to EAS builds as a file secret, never committed
+google-services.json
