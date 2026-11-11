@@ -6,7 +6,8 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 const db = getFirestore();
 const WEB_API_KEY = defineString('WEB_API_KEY');
-const opts = { region: 'us-central1', maxInstances: 20 };
+// Callables are reachable by any client; authorization happens inside each function.
+const opts = { region: 'us-central1', maxInstances: 20, invoker: 'public' as const };
 
 const USERNAME = /^[A-Za-z0-9_.]{3,20}$/;
 const MAX_FAILURES = 5;
