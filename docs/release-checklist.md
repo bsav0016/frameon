@@ -4,7 +4,11 @@ Everything the code needs is done except the items below, which need your accoun
 
 ## 1. Accounts and credentials (you)
 - [ ] `npx eas-cli login`, then `npx eas-cli init` in this folder. It writes `extra.eas.projectId` into app.json; push notifications stay off until that exists.
-- [ ] **Android push (FCM v1):** Firebase console, Project settings, Service accounts, generate a key; upload it with `npx eas-cli credentials` (Android, Push Notifications).
+- [ ] **Android push (FCM v1)**, in order:
+  1. The Firebase Android app (`com.brainsavidge.frameonnew`, id `1:322073099238:android:9c90bbb6d65651358a7427`) is already registered; `google-services.json` is gitignored.
+  2. Give EAS the config file: `npx eas-cli env:create --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json --visibility secret --environment development --environment preview --environment production`.
+  3. Firebase console, Project settings, Service accounts, Generate new private key. Keep that JSON out of the repo and out of chat.
+  4. `npx eas-cli credentials` then Android, a build profile, Google Service Account, then Manage your Google Service Account Key for Push Notifications (FCM V1), then upload the JSON from step 3. Delete the local copy afterwards.
 - [ ] **iOS push (APNs):** let EAS create the key when `eas build` asks (needs the Apple Developer login).
 - [ ] Stripe: Connect enabled, **live** keys swapped in (`firebase functions:secrets:set STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`, a live webhook endpoint, `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` set for the production build).
 - [ ] Apple merchant ID `merchant.BrianSavidge.FrameOnNew` created (only needed for Apple Pay).
