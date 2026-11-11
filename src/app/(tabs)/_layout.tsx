@@ -11,7 +11,7 @@ import { settingsHref } from '@/lib/routes';
 type IconName = keyof typeof Ionicons.glyphMap;
 
 const TABS: { name: string; title: string; icon: IconName; iconFocused: IconName }[] = [
-  { name: 'index', title: 'Home', icon: 'image-outline', iconFocused: 'image' },
+  { name: 'home', title: 'Home', icon: 'image-outline', iconFocused: 'image' },
   { name: 'explore', title: 'Search', icon: 'search-outline', iconFocused: 'search' },
   { name: 'camera', title: 'Post', icon: 'add-circle-outline', iconFocused: 'add-circle' },
   { name: 'notifications', title: 'Activity', icon: 'notifications-outline', iconFocused: 'notifications' },

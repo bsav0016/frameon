@@ -55,7 +55,7 @@ export default function PostScreen() {
       await refreshLists();
       reset();
       toast('Posted', 'success');
-      router.navigate('/');
+      router.navigate('/home');
     } catch {
       toast('Could not post. Please try again.', 'error');
     }
