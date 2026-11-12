@@ -34,7 +34,7 @@ export const TERMS: LegalSection[] = [
   },
   {
     heading: 'Changes and contact',
-    body: 'We may update these terms and will tell you in the app when they change materially. Questions or reports can be sent to the developer through the support address in the App Store listing.',
+    body: 'We may update these terms and will tell you in the app when they change materially. Questions or reports can be sent to savidgeapps@gmail.com.',
   },
 ];
 
