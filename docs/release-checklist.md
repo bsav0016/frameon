@@ -1,5 +1,18 @@
 # Release checklist
 
+> ## STOP: the Stripe live secret key has NOT been swapped yet
+>
+> The app side is live-ready (EAS **production** uses the `pk_live_` publishable key), but the **backend still holds the Stripe TEST secret key**. Until the two Firebase secrets below are replaced with live values, **a production build will fail every payment** (live publishable key against a test secret). **Do not publish a production build, or give one to anyone, before this is done.**
+>
+> Still to do, in this order:
+> 1. Get the live secret key (`sk_live_...`): create a new "FrameOn" secret key in Stripe (Developers, API keys, live mode), or copy the working one from `/etc/collagecreations.env` on the Collage droplet.
+> 2. `npx firebase functions:secrets:set STRIPE_SECRET_KEY --project frameonnew` and paste the live key.
+> 3. In Stripe live mode, the webhook endpoint `https://us-central1-frameonnew.cloudfunctions.net/stripeWebhook` (events `payment_intent.succeeded`, `charge.refunded`) already exists. Run `npx firebase functions:secrets:set STRIPE_WEBHOOK_SECRET --project frameonnew` and paste **its** `whsec_...` signing secret.
+> 4. Redeploy the functions so they pick the secrets up: `npx firebase deploy --project frameonnew --only functions`.
+> 5. Check: a $1 live purchase end to end, then refund it in Stripe.
+>
+> Remember the whole backend is one project, so after step 4 every build, including development builds, charges real cards.
+
 Everything the code needs is done except the items below, which need your accounts or decisions.
 
 ## 1. Accounts and credentials (you)
