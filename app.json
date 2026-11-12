@@ -23,7 +23,11 @@
         "foregroundImage": "./assets/images/android-foreground.png",
         "monochromeImage": "./assets/images/android-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -61,6 +65,9 @@
         {
           "android": {
             "extraProguardRules": "# Stripe's React Native SDK references push-provisioning classes that are not bundled (we do not use that feature).\n-dontwarn com.stripe.android.pushProvisioning.**"
+          },
+          "ios": {
+            "useFrameworks": "dynamic"
           }
         }
       ]
@@ -84,6 +91,12 @@
         "projectId": "e3ca509d-d2ca-4ad2-8769-71faa928d9b3"
       }
     },
-    "owner": "bsav0016"
+    "owner": "bsav0016",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e3ca509d-d2ca-4ad2-8769-71faa928d9b3"
+    }
   }
 }
