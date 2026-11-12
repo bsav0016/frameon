@@ -56,7 +56,7 @@ write('privacy/index.html', page('Privacy Policy - FrameOn', 'How FrameOn collec
 write('terms/index.html', page('Terms of Use - FrameOn', 'The rules for using FrameOn.', legalBody('Terms of Use', TERMS)));
 write('support/index.html', page('Support - FrameOn', 'Get help with FrameOn.', `<h1>Support</h1><div class="card"><h2>Contact</h2><p>${contact}</p>
 <h2>Report a problem or abuse</h2><p>In the app, use the flag on a post or comment, or the menu on a profile. Reports are reviewed within 24 hours.</p>
-<h2>Delete your account</h2><p>Open Settings in the app and choose Delete account. This removes your profile, posts and comments.</p></div>`));
+<h2 id="delete-account">Delete your account</h2><p>Open Settings in the app and choose Delete account. This removes your profile, posts and comments.</p></div>`));
 
 mkdirSync(join(out, 'assets'), { recursive: true });
 copyFileSync(join(root, 'assets', 'images', 'logo.png'), join(out, 'assets', 'icon.png'));
