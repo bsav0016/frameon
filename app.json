@@ -55,6 +55,14 @@
         {
           "color": "#8B5A2B"
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraProguardRules": "# Stripe's React Native SDK references push-provisioning classes that are not bundled (we do not use that feature).\n-dontwarn com.stripe.android.pushProvisioning.**"
+          }
+        }
       ]
     ],
     "experiments": {
