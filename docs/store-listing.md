@@ -49,7 +49,7 @@ A safe community
 You can report any post, comment or user, and block anyone you do not want to see. Reports are reviewed within 24 hours, and there is no tolerance for objectionable content or abusive users. You can delete your account and content at any time from Settings.
 ```
 
-**What's New (1.0.0):** Welcome to FrameOn. Share your art, follow artists, and buy original pieces directly from the maker.
+**What's New (2.0.0):** FrameOn has been rebuilt from the ground up: a faster, cleaner design, secure checkout with Stripe, seller payouts, ratings and reviews, notifications, and tools to report and block. Existing accounts from the old version need to create a new account.
 
 **Age rating questionnaire:** Contains user-generated content: **Yes** (moderated: report, block, terms, 24 hour review). Unrestricted web access: No. Gambling, contests: No. Alcohol, tobacco, drugs: None. Violence, sexual content, profanity, horror: None in the app itself (user-generated content is the only exposure). Expect 12+ or 17+ depending on how Apple weighs UGC.
 
