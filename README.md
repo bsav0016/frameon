@@ -1,7 +1,5 @@
 # FrameOn
 
-> **Before any production release:** the Stripe secret key and webhook secret in Firebase are still the *test* values and must be swapped for live ones. See the top of `docs/release-checklist.md`.
-
 A marketplace for sharing and selling artwork: post photos, rate and comment on work, follow artists, and buy
 pieces through Stripe. Expo (React Native) rebuild of the original Swift app.
 
