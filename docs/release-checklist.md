@@ -1,5 +1,11 @@
 # Release checklist
 
+> ## Stripe is switched to LIVE (done 2026-11-12)
+>
+> The live secret key and live webhook secret are set in Firebase (`STRIPE_SECRET_KEY` v2, `STRIPE_WEBHOOK_SECRET` v3), the functions were redeployed, and EAS **production** uses the `pk_live_` publishable key. The whole backend is one Firebase project, so every build, including development builds, now charges real cards.
+>
+> Still to do before submitting: one real end-to-end purchase (a $1 piece, a seller with live Stripe onboarding, a real card), then refund it in the Stripe dashboard. Old test secret versions can be destroyed with `npx firebase functions:secrets:prune --project frameonnew`.
+
 Everything the code needs is done except the items below, which need your accounts or decisions.
 
 ## 1. Accounts and credentials (you)
