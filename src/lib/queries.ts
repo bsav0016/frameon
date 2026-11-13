@@ -54,28 +54,30 @@ export function useFeed() {
     queryKey: ['feed', uid],
     enabled: ready,
     initialPageParam: undefined as Date | undefined,
-    queryFn: ({ pageParam }) => listFeed([uid, ...(following.data ?? [])], blocked.data ?? [], pageParam),
+    queryFn: ({ pageParam }) => listFeed([uid, ...(following.data ?? [])], blocked.data ?? [], pageParam, uid),
     getNextPageParam: (last) => (last.length >= 20 ? last[last.length - 1].createdAt : undefined),
   });
 }
 
 export function useExplore() {
+  const uid = useUid();
   const blocked = useBlocked();
   return useInfiniteQuery({
-    queryKey: ['explore'],
+    queryKey: ['explore', uid],
     enabled: blocked.data !== undefined,
     initialPageParam: null as Awaited<ReturnType<typeof listExplore>>['cursor'],
-    queryFn: ({ pageParam }) => listExplore(blocked.data ?? [], pageParam),
+    queryFn: ({ pageParam }) => listExplore(blocked.data ?? [], pageParam, uid),
     getNextPageParam: (last) => last.cursor ?? undefined,
   });
 }
 
 export function useUserPosts(ownerUid?: string) {
+  const viewer = useUid();
   return useInfiniteQuery({
-    queryKey: ['userPosts', ownerUid],
+    queryKey: ['userPosts', ownerUid, viewer],
     enabled: !!ownerUid,
     initialPageParam: null as Awaited<ReturnType<typeof listUserPosts>>['cursor'],
-    queryFn: ({ pageParam }) => listUserPosts(ownerUid!, pageParam),
+    queryFn: ({ pageParam }) => listUserPosts(ownerUid!, pageParam, viewer),
     getNextPageParam: (last) => last.cursor ?? undefined,
   });
 }
@@ -83,8 +85,9 @@ export function useUserPosts(ownerUid?: string) {
 export const usePost = (id: string) => useQuery({ queryKey: ['post', id], queryFn: () => getPost(id), enabled: !!id });
 
 export const useComments = (postId: string) => {
+  const uid = useUid();
   const blocked = useBlocked();
-  return useQuery({ queryKey: ['comments', postId], queryFn: () => listComments(postId, blocked.data ?? []), enabled: !!postId });
+  return useQuery({ queryKey: ['comments', postId], queryFn: () => listComments(postId, blocked.data ?? [], uid), enabled: !!postId });
 };
 
 export const useMyRating = (postId: string) => {

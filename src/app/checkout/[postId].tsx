@@ -27,7 +27,7 @@ export default function CheckoutScreen() {
 
   if (!post.data) return <EmptyState icon="image-outline" title="Post not found" />;
   const p = post.data;
-  if (p.priceCents <= 0 || p.quantity < 1) {
+  if (p.status === 'hidden' || p.priceCents <= 0 || p.quantity < 1) {
     return <EmptyState icon="pricetag-outline" title="No longer available" message="This piece is sold out or not for sale." />;
   }
 

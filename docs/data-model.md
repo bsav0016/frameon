@@ -10,9 +10,9 @@ notifications and anything touching another user is written by Cloud Functions (
 | `usernames/{name}` | none | none | all |
 | `follows/{follower}_{followee}` | signed in | create/delete own | notification trigger |
 | `blocks/{blocker}_{blocked}` | blocker | create/delete own | |
-| `posts/{id}` | signed in | create/edit/delete own (price needs `chargesEnabled`) | `ratingSum`, `ratingCount`, `commentCount`, stock |
+| `posts/{id}` | signed in | create/edit/delete own (price needs `chargesEnabled`) | `ratingSum`, `ratingCount`, `commentCount`, stock, `status` |
 | `posts/{id}/ratings/{uid}` | signed in | 1-5 stars, not own post | aggregates via `onRatingWritten` |
-| `posts/{id}/comments/{id}` | signed in | create; delete own or on own post | `commentCount` |
+| `posts/{id}/comments/{id}` | signed in | create; delete own or on own post | `commentCount`, `status` |
 | `purchases/{seller}_{buyer}` | none | none | webhook; gates seller reviews |
 | `sellerReviews/{seller}_{rater}` | signed in | buyers only | seller rating totals |
 | `orders/{id}` | buyer, seller | none | webhook |
@@ -26,3 +26,5 @@ Known limit: the feed queries `ownerUid in [...]` in chunks of 30 and merges, so
 approximate. A fan-out feed collection would remove this if it matters.
 
 Tests: `npm run test:rules` (needs Java) runs the rules against the emulators.
+
+`status` (`active` or `hidden`) on posts and comments is written by moderators only (Admin SDK). A missing value means active. Clients filter hidden items out client-side (the owner still sees their own hidden post), and `createPaymentIntent` rejects hidden posts. Filtering is client-side on purpose: a `where('status')` query would need a backfill and new indexes.

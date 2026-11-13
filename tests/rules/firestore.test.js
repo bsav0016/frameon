@@ -151,6 +151,14 @@ describe('posts', () => {
     await assertFails(updateDoc(ref, { imageURL: 'https://evil.example/x.jpg' }));
   });
 
+  it('cannot be hidden, unhidden or created hidden from a client', async () => {
+    await assertFails(setDoc(doc(as(ALICE), 'posts', 'new'), validPost({ status: 'hidden' })));
+    await assertFails(updateDoc(doc(as(ALICE), 'posts', 'p1'), { status: 'hidden' }));
+    await env.withSecurityRulesDisabled((ctx) => updateDoc(doc(ctx.firestore(), 'posts', 'p1'), { status: 'hidden' }));
+    await assertFails(updateDoc(doc(as(ALICE), 'posts', 'p1'), { status: 'active' }));
+    await assertSucceeds(updateDoc(doc(as(ALICE), 'posts', 'p1'), { caption: 'Still editable' }));
+  });
+
   it('cannot be edited or deleted by someone else', async () => {
     await assertFails(updateDoc(doc(as(BOB), 'posts', 'p1'), { caption: 'hacked' }));
     await assertFails(deleteDoc(doc(as(BOB), 'posts', 'p1')));
@@ -185,6 +193,10 @@ describe('comments', () => {
 
   it('can be posted as yourself', async () => {
     await assertSucceeds(setDoc(doc(as(BOB), 'posts', 'p1', 'comments', 'c1'), comment()));
+  });
+
+  it('cannot be created hidden', async () => {
+    await assertFails(setDoc(doc(as(BOB), 'posts', 'p1', 'comments', 'c1'), comment({ status: 'hidden' })));
   });
 
   it('cannot be empty, too long, or posted as someone else', async () => {

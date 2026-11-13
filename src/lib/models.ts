@@ -31,6 +31,8 @@ export const postSchema = z.object({
   ratingSum: z.number().default(0),
   ratingCount: z.number().int().default(0),
   commentCount: z.number().int().default(0),
+  // Set by moderators only. Documents without the field (and unknown values) count as active.
+  status: z.enum(['active', 'hidden']).catch('active'),
 });
 export type Post = z.infer<typeof postSchema> & { id: string };
 
@@ -39,6 +41,7 @@ export const commentSchema = z.object({
   username: z.string(),
   text: z.string(),
   createdAt: timestamp,
+  status: z.enum(['active', 'hidden']).catch('active'),
 });
 export type Comment = z.infer<typeof commentSchema> & { id: string };
 

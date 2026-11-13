@@ -110,8 +110,8 @@ export const createPaymentIntent = onCall(callable, async (req) => {
   const postId = text(req.data?.postId, 'post', 100);
   const shipping = parseShipping(req.data?.shipping);
 
-  const post = (await db.doc(`posts/${postId}`).get()).data() as { ownerUid: string; priceCents: number; quantity: number } | undefined;
-  if (!post || post.priceCents < 50 || post.quantity < 1) throw new HttpsError('failed-precondition', 'This piece is no longer available.');
+  const post = (await db.doc(`posts/${postId}`).get()).data() as { ownerUid: string; priceCents: number; quantity: number; status?: string } | undefined;
+  if (!post || post.status === 'hidden' || post.priceCents < 50 || post.quantity < 1) throw new HttpsError('failed-precondition', 'This piece is no longer available.');
   if (post.ownerUid === buyerUid) throw new HttpsError('failed-precondition', 'You cannot buy your own art.');
 
   const [seller, blockedByThem, blockedByMe] = await Promise.all([

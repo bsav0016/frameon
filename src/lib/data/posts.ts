@@ -18,6 +18,7 @@ import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
 import { db, storage } from '../firebase';
 import { commentSchema, postSchema, ratingSchema, type Comment, type Post, type Rating } from '../models';
+import { isVisibleTo } from '../moderation';
 import { chunk, parseSnap, parseSnaps } from './parse';
 
 const PAGE = 20;
@@ -30,7 +31,8 @@ export async function getPost(id: string): Promise<Post | null> {
   return parseSnap(postSchema, await getDoc(doc(db, 'posts', id)), 'id');
 }
 
-export async function listUserPosts(ownerUid: string, after?: DocumentSnapshot | null): Promise<Page<Post>> {
+/** Owners still see their own hidden posts (flagged in the UI); everyone else does not. */
+export async function listUserPosts(ownerUid: string, after?: DocumentSnapshot | null, viewerUid?: string): Promise<Page<Post>> {
   const q = query(
     collection(db, 'posts'),
     where('ownerUid', '==', ownerUid),
@@ -39,11 +41,14 @@ export async function listUserPosts(ownerUid: string, after?: DocumentSnapshot |
     limit(PAGE),
   );
   const snap = await getDocs(q);
-  return { items: parseSnaps(postSchema, snap.docs, 'id'), cursor: snap.docs.length === PAGE ? snap.docs[snap.docs.length - 1] : null };
+  return {
+    items: parseSnaps(postSchema, snap.docs, 'id').filter((p) => isVisibleTo(p, viewerUid)),
+    cursor: snap.docs.length === PAGE ? snap.docs[snap.docs.length - 1] : null,
+  };
 }
 
 /** Newest posts from the given owners (people the user follows plus themselves), minus blocked users. */
-export async function listFeed(ownerUids: string[], blocked: string[] = [], before?: Date): Promise<Post[]> {
+export async function listFeed(ownerUids: string[], blocked: string[] = [], before?: Date, viewerUid?: string): Promise<Post[]> {
   const visible = ownerUids.filter((u) => !blocked.includes(u));
   const results = await Promise.all(
     chunk(visible, IN_LIMIT).map((uids) =>
@@ -60,16 +65,17 @@ export async function listFeed(ownerUids: string[], blocked: string[] = [], befo
   );
   return results
     .flatMap((s) => parseSnaps(postSchema, s.docs, 'id'))
+    .filter((p) => isVisibleTo(p, viewerUid))
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     .slice(0, PAGE);
 }
 
-export async function listExplore(blocked: string[] = [], after?: DocumentSnapshot | null): Promise<Page<Post>> {
+export async function listExplore(blocked: string[] = [], after?: DocumentSnapshot | null, viewerUid?: string): Promise<Page<Post>> {
   const snap = await getDocs(
     query(collection(db, 'posts'), orderBy('createdAt', 'desc'), ...(after ? [startAfter(after)] : []), limit(PAGE)),
   );
   return {
-    items: parseSnaps(postSchema, snap.docs, 'id').filter((p) => !blocked.includes(p.ownerUid)),
+    items: parseSnaps(postSchema, snap.docs, 'id').filter((p) => !blocked.includes(p.ownerUid) && isVisibleTo(p, viewerUid)),
     cursor: snap.docs.length === PAGE ? snap.docs[snap.docs.length - 1] : null,
   };
 }
@@ -130,9 +136,9 @@ export async function removeRating(postId: string, uid: string) {
 }
 
 // ---- comments ----
-export async function listComments(postId: string, blocked: string[] = []): Promise<Comment[]> {
+export async function listComments(postId: string, blocked: string[] = [], viewerUid?: string): Promise<Comment[]> {
   const snap = await getDocs(query(collection(db, 'posts', postId, 'comments'), orderBy('createdAt', 'asc'), limit(200)));
-  return parseSnaps(commentSchema, snap.docs, 'id').filter((c) => !blocked.includes(c.authorUid));
+  return parseSnaps(commentSchema, snap.docs, 'id').filter((c) => !blocked.includes(c.authorUid) && isVisibleTo(c, viewerUid));
 }
 
 export async function addComment(postId: string, uid: string, username: string, text: string) {
