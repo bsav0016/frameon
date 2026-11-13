@@ -22,6 +22,12 @@ Everything the code needs is done except the items below, which need your accoun
   2. Stripe dashboard, Settings, Payments, **Apple Pay**, "Add new application" under iOS: Stripe gives you a certificate signing request; upload it in the developer portal under the merchant ID's **Apple Pay Payment Processing Certificate**, download the `.cer` and upload it back to Stripe. Do this for the mode the build will charge in (live for the store build), and check whether test mode needs its own.
   3. Make a new iOS build (the merchant ID and entitlement are native settings, so an over-the-air update cannot add them) and test on a real iPhone with a card in Wallet: open a priced post, Buy, fill the address, Continue, and Apple Pay appears in the payment sheet.
 
+### Review account and content (before submitting to App Review)
+- Reviewer login: `node store-assets/tools/create-reviewer.mjs` (the password goes only to the gitignored `reviewer-account.json`).
+- A feed that is not empty, with nothing for sale that cannot be bought: `node store-assets/tools/seed-demo.mjs review` (no prices, no gcloud), and `node store-assets/tools/seed-demo.mjs cleanup` after the review passes.
+- **One real seller with a priced post.** Checkout only opens Stripe's payment sheet for a seller with a real connected Stripe account (`stripeAccountId` and `chargesEnabled`, from live Stripe onboarding in the app). Without one, a reviewer who taps Buy gets "This seller cannot accept payments right now" and never sees Apple Pay. Onboard a real seller, post one piece (for example $1, quantity 1 or more), and refund any real test purchase in Stripe.
+- A short screen recording of Buy, address, and the payment sheet listing Apple Pay can be attached in App Store Connect (App Review Information) as a backup.
+
 ## 2. Builds
 - Development build for testing payments and push: `npx eas-cli build --profile development --platform android` (or ios).
 - Release: `npx eas-cli build --profile production`, then `npx eas-cli submit`.
