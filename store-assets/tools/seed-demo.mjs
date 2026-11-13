@@ -1,5 +1,9 @@
 // Fills the Firebase project with a small believable community so store screenshots have something to show.
-// Usage: node seed-demo.mjs seed | node seed-demo.mjs cleanup   (run from anywhere; needs gcloud logged in for `seed`)
+// Usage: node seed-demo.mjs seed | review | avatars | cleanup   (run from anywhere; needs gcloud logged in for `seed`)
+//   seed    store screenshots: priced posts, and the demo artists are marked able to take payments (gcloud needed).
+//   review  App Review / a live store: the same community with NO prices and no seller flags, so nothing in it leads
+//           to a checkout that cannot work (the demo artists have no real Stripe account behind them). The one priced
+//           post a reviewer can pay for must come from a real, onboarded seller. No gcloud needed. Remove with `cleanup`.
 // Everything goes through the same callables and security rules as the real app, except the demo artists'
 // `chargesEnabled` seller flag, which normally comes from Stripe onboarding and is set here with gcloud credentials.
 import { execSync } from 'node:child_process';
@@ -103,7 +107,7 @@ function setSellerFlag(uid) {
   if (res.includes('"error"')) throw new Error(res);
 }
 
-async function seed() {
+async function seed(forReview = false) {
   const state = { password: PASSWORD, uids: {}, posts: {} };
   for (const [key, u] of Object.entries(USERS)) {
     await call('registerAccount', { username: u.username, email: `demo+${key}@example.com`, password: PASSWORD, name: u.name, acceptedTerms: true });
@@ -113,10 +117,15 @@ async function seed() {
   }
   writeFileSync(STATE, JSON.stringify(state, null, 2));
 
-  for (const key of ['elena', 'kai', 'marlow']) setSellerFlag(state.uids[key]);
-  console.log('seller flags set');
+  if (!forReview) {
+    for (const key of ['elena', 'kai', 'marlow']) setSellerFlag(state.uids[key]);
+    console.log('seller flags set');
+  }
 
-  for (const [owner, art, caption, priceCents, quantity] of POSTS) {
+  for (const [owner, art, caption, listedPriceCents, listedQuantity] of POSTS) {
+    // For review nothing is for sale: a post from a demo artist cannot be bought (no Stripe account behind it).
+    const priceCents = forReview ? 0 : listedPriceCents;
+    const quantity = forReview ? 0 : listedQuantity;
     const uid = await signInAs(owner);
     const postRef = doc(collection(db, 'posts'));
     const imagePath = `posts/${uid}/${postRef.id}.jpg`;
@@ -174,7 +183,7 @@ async function avatars() {
 }
 
 const mode = process.argv[2];
-if (mode === 'seed') seed().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); });
+if (mode === 'seed' || mode === 'review') seed(mode === 'review').then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); });
 else if (mode === 'cleanup') cleanup();
 else if (mode === 'avatars') avatars();
-else console.log('usage: node seed-demo.mjs seed|avatars|cleanup');
+else console.log('usage: node seed-demo.mjs seed|review|avatars|cleanup');
