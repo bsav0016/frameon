@@ -17,7 +17,7 @@ Everything the code needs is done except the items below, which need your accoun
   4. `npx eas-cli credentials` then Android, a build profile, Google Service Account, then Manage your Google Service Account Key for Push Notifications (FCM V1), then upload the JSON from step 3. Delete the local copy afterwards.
 - [ ] **iOS push (APNs):** let EAS create the key when `eas build` asks (needs the Apple Developer login).
 - [ ] Stripe: Connect enabled, **live** keys swapped in (`firebase functions:secrets:set STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`, a live webhook endpoint, `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` set for the production build).
-- [ ] Apple merchant ID `merchant.BrianSavidge.FrameOnNew` created (only needed for Apple Pay).
+- Apple Pay is **not** offered, and the app declares no Apple Pay merchant ID (Apple asked about this under Guideline 2.1). To add it later: create a merchant ID, upload the Apple Pay certificate in Stripe, then set `merchantIdentifier` on the Stripe plugin in `app.json` and the provider and pass `applePay: { merchantCountryCode }` to `initPaymentSheet`. `src/lib/__tests__/stripe.test.tsx` fails until it is changed on purpose.
 
 ## 2. Builds
 - Development build for testing payments and push: `npx eas-cli build --profile development --platform android` (or ios).
