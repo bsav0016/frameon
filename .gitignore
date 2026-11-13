@@ -59,3 +59,6 @@ site-out/
 
 # Firebase Android config: supplied to EAS builds as a file secret, never committed
 google-services.json
+store-assets/tools/reviewer-account.json
+store-assets/ios/6.3in/
+store-assets/tools/create-reviewer.mjs
