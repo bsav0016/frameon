@@ -5,7 +5,7 @@
 //   node functions/scripts/moderate.mjs list
 //   node functions/scripts/moderate.mjs hide post <postId>
 //   node functions/scripts/moderate.mjs hide comment <postId>/<commentId>
-//   node functions/scripts/moderate.mjs unhide post|comment <id>
+//   node functions/scripts/moderate.mjs unhide post|comment <id>   (also dismisses its reports, so they cannot re-hide it)
 //   node functions/scripts/moderate.mjs delete-post <postId>      (the onPostDeleted function removes the photo, ratings, comments)
 //   node functions/scripts/moderate.mjs suspend <uid>             (disables sign-in; `unsuspend <uid>` reverses it)
 //   node functions/scripts/moderate.mjs dismiss <reportId>        (also: `actioned <reportId>`)
@@ -58,7 +58,7 @@ switch (cmd) {
   case 'hide':
   case 'unhide':
     await setStatus(a, b, cmd === 'hide' ? 'hidden' : 'active');
-    if (cmd === 'hide') await resolveReports(a, b, 'actioned');
+    await resolveReports(a, b, cmd === 'hide' ? 'actioned' : 'dismissed');
     break;
   case 'delete-post':
     await db.doc(pathFor('post', a)).delete();

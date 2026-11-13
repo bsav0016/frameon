@@ -27,3 +27,44 @@ export function distinctReporters(reports: ReportLike[], ownerUid: string | unde
 export function shouldAutoHide(reports: ReportLike[], ownerUid: string | undefined, threshold = AUTO_HIDE_REPORTS): boolean {
   return distinctReporters(reports, ownerUid) >= threshold;
 }
+
+// ---- image screening (Google Cloud Vision SafeSearch) ----
+
+const LIKELIHOODS = ['UNKNOWN', 'VERY_UNLIKELY', 'UNLIKELY', 'POSSIBLE', 'LIKELY', 'VERY_LIKELY'] as const;
+export type Likelihood = (typeof LIKELIHOODS)[number];
+
+/** The client library returns either the enum name or its number depending on version. */
+export function normalizeLikelihood(v: unknown): Likelihood {
+  if (typeof v === 'number') return LIKELIHOODS[v] ?? 'UNKNOWN';
+  return LIKELIHOODS.includes(v as Likelihood) ? (v as Likelihood) : 'UNKNOWN';
+}
+
+export interface SafeSearch {
+  adult?: unknown;
+  violence?: unknown;
+  racy?: unknown;
+}
+
+export type ImageAction = 'ok' | 'review' | 'hide';
+
+/**
+ * Art can legitimately contain nudity, so this is deliberately conservative: only VERY_LIKELY adult or violent
+ * content is hidden automatically. LIKELY adult/violence, or VERY_LIKELY racy, is queued for a human.
+ */
+export function imageAction(s: SafeSearch): ImageAction {
+  const adult = normalizeLikelihood(s.adult);
+  const violence = normalizeLikelihood(s.violence);
+  const racy = normalizeLikelihood(s.racy);
+  if (adult === 'VERY_LIKELY' || violence === 'VERY_LIKELY') return 'hide';
+  if (adult === 'LIKELY' || violence === 'LIKELY' || racy === 'VERY_LIKELY') return 'review';
+  return 'ok';
+}
+
+/** Storage paths the app writes: posts/{uid}/{postId}.ext and avatars/{uid}/{file}. */
+export function parseImagePath(name: string): { kind: 'post'; uid: string; postId: string } | { kind: 'avatar'; uid: string } | null {
+  const post = /^posts\/([^/]+)\/([^/.]+)\.[A-Za-z0-9]+$/.exec(name);
+  if (post) return { kind: 'post', uid: post[1], postId: post[2] };
+  const avatar = /^avatars\/([^/]+)\/[^/]+$/.exec(name);
+  if (avatar) return { kind: 'avatar', uid: avatar[1] };
+  return null;
+}
