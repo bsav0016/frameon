@@ -40,3 +40,37 @@ Everything the code needs is done except the items below, which need your accoun
 - [ ] Budget alert in Google Cloud billing.
 - [ ] Review the `reports` collection daily; the Terms promise action within 24 hours.
 - [ ] Remove any leftover `zz_test_*` accounts from Authentication.
+
+## 5. Over-the-air updates (after the store builds are live)
+
+Builds from 2.0.0 on include `expo-updates` and listen to the channel named in `eas.json` (`production` for store builds). An update only reaches builds with the **same app version** (`runtimeVersion` follows `version` in `app.json`).
+
+| Change | How it ships |
+| --- | --- |
+| Screens, copy, JavaScript, images bundled in the app | `npm run update:production`, reaches users on their next launch (applied on the one after) |
+| A native library, new permissions, native `app.json` settings, a new Expo SDK | Store release with a new version number |
+| Cloud Functions, Firestore and Storage rules | `npx firebase deploy --project frameonnew`, not an app update |
+
+**Rule of thumb:** if the change could not run in the app that is already installed, it is a store release. When unsure, it is a store release. Dependabot bumps of native packages (Stripe, notifications, image picker and so on) go out as store releases.
+
+### Publishing
+
+1. Make the change on a branch and open a PR as usual (CI runs lint, typecheck and tests).
+2. Try it on preview first. From your branch: `npm run update:preview`. It refuses to run with uncommitted changes, runs lint, typecheck, tests and a bundle check, then publishes to the `preview` channel. Open a preview build (`npx eas-cli build --profile preview`), force-quit and reopen the app twice, and check the fix.
+3. Merge the PR, then from an up-to-date `main`: `git checkout main && git pull && npm run update:production`. It refuses unless you are on `main`, the tree is clean and `HEAD` equals `origin/main`, so production gets exactly what was merged.
+4. Add `-- --dry-run` to either command to run every check and print the publish command without publishing.
+
+The scripts need `npx eas-cli login`, and the checks need the `EXPO_PUBLIC_*` values from `.env.local` (or the placeholder values CI uses) in your environment.
+
+### Rolling back
+
+1. `npx eas-cli update:list --branch production --limit 5` shows the update group ids.
+2. `npx eas-cli update:rollback <GROUP_ID> --message "Roll back: <why>"` (the group must be the latest on its branch and runtime version). Phones pick it up on their next launch.
+3. Fix forward on a branch, try it on preview, publish again.
+
+A rollback cannot recall an update from phones that already applied it and never reopen the app.
+
+### Notes
+
+- Production builds were made with Stripe live keys (`EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` is an EAS environment variable). `update:production` publishes with the `production` EAS environment, so the same key is used. Check the variables with `npx eas-cli env:list --environment production` if a payment screen misbehaves after an update.
+- Check Apple's and Google's current rules on over-the-air updates before relying on them for anything beyond fixing JavaScript and assets.
