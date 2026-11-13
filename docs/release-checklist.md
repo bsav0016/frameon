@@ -47,16 +47,22 @@ Builds from 2.0.0 on include `expo-updates` and listen to the channel named in `
 
 | Change | How it ships |
 | --- | --- |
-| Screens, copy, JavaScript, images bundled in the app | `npm run update:production`, reaches users on their next launch (applied on the one after) |
+| Screens, copy, JavaScript, images bundled in the app | `npm run update:production`, reaches users on their next launch (applied on that launch if it downloads within 3 seconds, otherwise on the one after) |
 | A native library, new permissions, native `app.json` settings, a new Expo SDK | Store release with a new version number |
 | Cloud Functions, Firestore and Storage rules | `npx firebase deploy --project frameonnew`, not an app update |
 
 **Rule of thumb:** if the change could not run in the app that is already installed, it is a store release. When unsure, it is a store release. Dependabot bumps of native packages (Stripe, notifications, image picker and so on) go out as store releases.
 
+### Updates on the first open
+
+`app.json` sets `updates.fallbackToCacheTimeout` to 3000. At launch the app checks for an update and, if one exists, holds the splash screen for up to 3 seconds while it downloads, so it starts on the new code straight away. If the download is not done in time the app starts on the code it already has and the update applies on the next launch. The check is quick when there is nothing new; the cost is that on a very slow connection every start can wait up to 3 seconds.
+
+This value is read by the native build, so it only takes effect in builds made after it was set. The 2.0.0 builds that are already submitted keep applying updates on the second launch; it takes effect from the next store build.
+
 ### Publishing
 
 1. Make the change on a branch and open a PR as usual (CI runs lint, typecheck and tests).
-2. Try it on preview first. From your branch: `npm run update:preview`. It refuses to run with uncommitted changes, runs lint, typecheck, tests and a bundle check, then publishes to the `preview` channel. Open a preview build (`npx eas-cli build --profile preview`), force-quit and reopen the app twice, and check the fix.
+2. Try it on preview first. From your branch: `npm run update:preview`. It refuses to run with uncommitted changes, runs lint, typecheck, tests and a bundle check, then publishes to the `preview` channel. Open a preview build (`npx eas-cli build --profile preview`), force-quit and reopen the app (the update is applied on that launch if it downloads within 3 seconds; on a slow connection reopen once more), and check the fix.
 3. Merge the PR, then from an up-to-date `main`: `git checkout main && git pull && npm run update:production`. It refuses unless you are on `main`, the tree is clean and `HEAD` equals `origin/main`, so production gets exactly what was merged.
 4. Add `-- --dry-run` to either command to run every check and print the publish command without publishing.
 
