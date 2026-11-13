@@ -21,7 +21,7 @@ export function StripeGate({ children }: { children: ReactNode }) {
   if (!stripe) return <>{children}</>;
   const { StripeProvider } = stripe;
   return (
-    <StripeProvider publishableKey={readEnv().stripePublishableKey} merchantIdentifier="merchant.BrianSavidge.FrameOnNew" urlScheme="frameon">
+    <StripeProvider publishableKey={readEnv().stripePublishableKey} urlScheme="frameon">
       <>{children}</>
     </StripeProvider>
   );

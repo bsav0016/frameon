@@ -74,6 +74,8 @@ Not collected: location, contacts, browsing history, health, diagnostics, advert
 ```
 FrameOn is a social marketplace for original art. Users post photos of their work, follow artists, rate and comment, and buy pieces from sellers. Payments are processed by Stripe; sellers receive payouts through Stripe Connect. The goods are physical artwork shipped by the seller, so in-app purchase is not used (Guideline 3.1.3(e)).
 
+Apple Pay: not offered. Checkout is Stripe's payment sheet with card entry only. The PassKit framework appears in the binary only because Stripe's iOS SDK links it; the app declares no Apple Pay merchant ID and has no Apple Pay flow to locate.
+
 Demo account (buyer): username <DEMO USERNAME>, password <DEMO PASSWORD>.
 You can browse the feed and Search, open a post, rate and comment, follow artists, and open Settings.
 
