@@ -62,6 +62,9 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "check": "npm run lint && npm run typecheck && npm test",
+    "build:check": "expo export --platform ios --platform android --output-dir dist",
+    "update:preview": "node scripts/publish-update.js preview",
+    "update:production": "node scripts/publish-update.js production",
     "test:rules": "firebase emulators:exec --only firestore,storage --project demo-frameon \"jest -c jest.rules.config.js --runInBand\""
   },
   "private": true,
