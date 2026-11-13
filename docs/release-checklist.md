@@ -47,7 +47,7 @@ Everything the code needs is done except the items below, which need your accoun
 - [ ] Firebase **App Check** (Play Integrity / App Attest) to stop non-app clients calling the backend. Needs a dev build, then enforce for Firestore, Storage and Functions.
 - [ ] Restrict the Firebase web API key to the app's bundle ID / package in Google Cloud console, credentials.
 - [ ] Budget alert in Google Cloud billing.
-- [ ] Review the `reports` collection daily; the Terms promise action within 24 hours.
+- [ ] Moderation: set `MODERATOR_UID` for report alerts and deploy functions (see `docs/moderation.md`); act on alerts with `functions/scripts/moderate.mjs` within 24 hours.
 - [ ] Remove any leftover `zz_test_*` accounts from Authentication.
 
 ## 5. Over-the-air updates (after the store builds are live)
