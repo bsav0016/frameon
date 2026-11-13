@@ -4,10 +4,11 @@ import { Text } from 'react-native';
 import appJson from '../../../app.json';
 import { payWithSheet, StripeGate } from '../stripe';
 
-// FrameOn takes card payments through Stripe's payment sheet and does not offer Apple Pay. Apple's review
-// (Guideline 2.1) asks about Apple Pay whenever the binary looks like it supports it, so the app must not
-// declare an Apple Pay merchant. If Apple Pay is added on purpose, change these expectations with it.
+// Checkout offers Apple Pay through Stripe's payment sheet. Apple's review (Guideline 2.1) asks where Apple Pay
+// is when the binary contains PassKit, so what the app declares and what the sheet is given have to agree:
+// the same merchant in the app config and on the provider, and Apple Pay turned on in the sheet.
 
+const MERCHANT = 'merchant.BrianSavidge.FrameOnNew';
 const mockInitPaymentSheet = jest.fn();
 const mockPresentPaymentSheet = jest.fn();
 const providerProps: Record<string, unknown>[] = [];
@@ -23,41 +24,42 @@ jest.mock('@stripe/stripe-react-native', () => ({
 }));
 jest.mock('../env', () => ({ readEnv: () => ({ stripePublishableKey: 'pk_test_123' }) }));
 
-describe('Stripe setup', () => {
+describe('Stripe and Apple Pay setup', () => {
   beforeEach(() => {
     providerProps.length = 0;
     mockInitPaymentSheet.mockReset().mockResolvedValue({});
     mockPresentPaymentSheet.mockReset().mockResolvedValue({});
   });
 
-  it('declares no Apple Pay merchant in the app config', () => {
+  it('declares the Apple Pay merchant in the app config', () => {
     const plugins = appJson.expo.plugins as (string | [string, Record<string, unknown>])[];
     const stripePlugin = plugins.find((p) => Array.isArray(p) && p[0] === '@stripe/stripe-react-native') as
       | [string, Record<string, unknown>]
       | undefined;
     expect(stripePlugin).toBeDefined();
-    expect(stripePlugin![1]).not.toHaveProperty('merchantIdentifier');
+    expect(stripePlugin![1]).toMatchObject({ merchantIdentifier: MERCHANT });
   });
 
-  it('does not give the Stripe provider a merchant identifier', async () => {
+  it('gives the Stripe provider the same merchant', async () => {
     await render(
       <StripeGate>
         <Text>child</Text>
       </StripeGate>,
     );
     expect(providerProps).toHaveLength(1);
-    expect(providerProps[0]).toMatchObject({ publishableKey: 'pk_test_123', urlScheme: 'frameon' });
-    expect(providerProps[0]).not.toHaveProperty('merchantIdentifier');
+    expect(providerProps[0]).toMatchObject({ publishableKey: 'pk_test_123', merchantIdentifier: MERCHANT, urlScheme: 'frameon' });
   });
 
-  it('opens the payment sheet without Apple Pay', async () => {
+  it('opens the payment sheet with Apple Pay turned on for a US merchant', async () => {
     const result = await payWithSheet('pi_secret_123');
 
     expect(result).toEqual({ status: 'paid' });
     expect(mockInitPaymentSheet).toHaveBeenCalledTimes(1);
-    const options = mockInitPaymentSheet.mock.calls[0][0];
-    expect(options).toMatchObject({ merchantDisplayName: 'FrameOn', paymentIntentClientSecret: 'pi_secret_123' });
-    expect(options).not.toHaveProperty('applePay');
+    expect(mockInitPaymentSheet.mock.calls[0][0]).toMatchObject({
+      merchantDisplayName: 'FrameOn',
+      paymentIntentClientSecret: 'pi_secret_123',
+      applePay: { merchantCountryCode: 'US' },
+    });
   });
 
   it('reports a cancelled payment and an error from the sheet', async () => {

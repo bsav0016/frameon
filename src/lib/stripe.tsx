@@ -21,7 +21,7 @@ export function StripeGate({ children }: { children: ReactNode }) {
   if (!stripe) return <>{children}</>;
   const { StripeProvider } = stripe;
   return (
-    <StripeProvider publishableKey={readEnv().stripePublishableKey} urlScheme="frameon">
+    <StripeProvider publishableKey={readEnv().stripePublishableKey} merchantIdentifier="merchant.BrianSavidge.FrameOnNew" urlScheme="frameon">
       <>{children}</>
     </StripeProvider>
   );
@@ -36,6 +36,9 @@ export async function payWithSheet(clientSecret: string): Promise<PayResult> {
     const init = await stripe.initPaymentSheet({
       merchantDisplayName: 'FrameOn',
       paymentIntentClientSecret: clientSecret,
+      // Apple Pay shows in the sheet on an iPhone with a card in Wallet. The platform account (the one that
+      // takes the charge and pays sellers out) is in the US, so that is the merchant country.
+      applePay: { merchantCountryCode: 'US' },
       returnURL: 'frameon://stripe-redirect',
     });
     if (init.error) return { status: 'error', message: init.error.message };

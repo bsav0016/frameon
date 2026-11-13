@@ -50,6 +50,7 @@
       [
         "@stripe/stripe-react-native",
         {
+          "merchantIdentifier": "merchant.BrianSavidge.FrameOnNew",
           "enableGooglePay": false
         }
       ],
