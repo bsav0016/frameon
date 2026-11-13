@@ -11,6 +11,7 @@ import { radius, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { addComment, deleteComment, deletePost, removeRating, setRating, updatePost } from '@/lib/data/posts';
 import { formatCount, formatPrice, parseSaleFields, timeAgo } from '@/lib/format';
+import { isVisibleTo } from '@/lib/moderation';
 import { useCanSell, useComments, useMyRating, usePost, useProfile, useRefreshLists, useUid } from '@/lib/queries';
 import { userHref } from '@/lib/routes';
 
@@ -50,6 +51,9 @@ export default function PostDetailScreen() {
 
   const p = post.data;
   const isOwner = p.ownerUid === uid;
+  if (!isVisibleTo(p, uid)) {
+    return <EmptyState icon="eye-off-outline" title="Post removed" message="This post was removed by moderators." />;
+  }
   const average = p.ratingCount === 0 ? 0 : p.ratingSum / p.ratingCount;
   const forSale = p.priceCents > 0 && p.quantity > 0;
 
@@ -173,6 +177,12 @@ export default function PostDetailScreen() {
         </View>
       </Pressable>
 
+      {p.status === 'hidden' ? (
+        <View style={[styles.sale, { backgroundColor: theme.surfaceMuted }]}>
+          <Text variant="caption">Moderators removed this post, so only you can see it. Contact support if you think this is a mistake.</Text>
+        </View>
+      ) : null}
+
       <Image source={{ uri: p.imageURL }} style={[styles.image, { backgroundColor: theme.surfaceMuted }]} contentFit="contain" transition={200} />
 
       <View style={styles.row}>
@@ -194,7 +204,7 @@ export default function PostDetailScreen() {
         </View>
       ) : null}
 
-      {forSale && !isOwner && !editing ? (
+      {forSale && !isOwner && !editing && p.status !== 'hidden' ? (
         <Button title={`Buy for ${formatPrice(p.priceCents)}`} onPress={() => router.push(`/checkout/${id}` as never)} />
       ) : null}
 
