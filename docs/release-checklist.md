@@ -17,7 +17,10 @@ Everything the code needs is done except the items below, which need your accoun
   4. `npx eas-cli credentials` then Android, a build profile, Google Service Account, then Manage your Google Service Account Key for Push Notifications (FCM V1), then upload the JSON from step 3. Delete the local copy afterwards.
 - [ ] **iOS push (APNs):** let EAS create the key when `eas build` asks (needs the Apple Developer login).
 - [ ] Stripe: Connect enabled, **live** keys swapped in (`firebase functions:secrets:set STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`, a live webhook endpoint, `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` set for the production build).
-- Apple Pay is **not** offered, and the app declares no Apple Pay merchant ID (Apple asked about this under Guideline 2.1). To add it later: create a merchant ID, upload the Apple Pay certificate in Stripe, then set `merchantIdentifier` on the Stripe plugin in `app.json` and the provider and pass `applePay: { merchantCountryCode }` to `initPaymentSheet`. `src/lib/__tests__/stripe.test.tsx` fails until it is changed on purpose.
+- [ ] **Apple Pay** (checkout offers it, so these are required before an iOS build that is submitted):
+  1. Developer portal, Certificates, Identifiers & Profiles, Identifiers, **Merchant IDs**: create `merchant.BrianSavidge.FrameOnNew`, and turn on **Apple Pay Payment Processing** for the app's identifier (`BrianSavidge.FrameOnNew`), choosing that merchant ID. EAS builds sign with this; a build made before this step has no Apple Pay.
+  2. Stripe dashboard, Settings, Payments, **Apple Pay**, "Add new application" under iOS: Stripe gives you a certificate signing request; upload it in the developer portal under the merchant ID's **Apple Pay Payment Processing Certificate**, download the `.cer` and upload it back to Stripe. Do this for the mode the build will charge in (live for the store build), and check whether test mode needs its own.
+  3. Make a new iOS build (the merchant ID and entitlement are native settings, so an over-the-air update cannot add them) and test on a real iPhone with a card in Wallet: open a priced post, Buy, fill the address, Continue, and Apple Pay appears in the payment sheet.
 
 ## 2. Builds
 - Development build for testing payments and push: `npx eas-cli build --profile development --platform android` (or ios).
