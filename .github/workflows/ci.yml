@@ -27,4 +27,5 @@ jobs:
       # The Cloud Functions are a separate project with their own dependencies and tsconfig.
       - run: npm ci --prefix functions
       - run: npm run build --prefix functions
+      - run: npm test --prefix functions
       - run: npm test -- --ci
