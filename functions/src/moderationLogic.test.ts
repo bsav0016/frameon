@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { AUTO_HIDE_REPORTS, distinctReporters, shouldAutoHide, targetPath } from './moderationLogic';
+import { AUTO_HIDE_REPORTS, distinctReporters, imageAction, parseImagePath, shouldAutoHide, targetPath } from './moderationLogic';
 
 describe('targetPath', () => {
   it('maps posts and comments to their documents', () => {
@@ -35,5 +35,41 @@ describe('auto hide', () => {
     assert.equal(shouldAutoHide([r('a'), r('b')], 'owner'), false);
     assert.equal(shouldAutoHide([r('a'), r('a'), r('a')], 'owner'), false);
     assert.equal(shouldAutoHide([r('a'), r('b'), r('c')], 'owner'), true);
+  });
+});
+
+describe('imageAction', () => {
+  it('hides only very likely adult or violent images', () => {
+    assert.equal(imageAction({ adult: 'VERY_LIKELY' }), 'hide');
+    assert.equal(imageAction({ violence: 'VERY_LIKELY' }), 'hide');
+  });
+
+  it('queues borderline images for a human instead of hiding them', () => {
+    assert.equal(imageAction({ adult: 'LIKELY' }), 'review');
+    assert.equal(imageAction({ violence: 'LIKELY' }), 'review');
+    assert.equal(imageAction({ racy: 'VERY_LIKELY' }), 'review');
+  });
+
+  it('lets ordinary and merely racy art through', () => {
+    assert.equal(imageAction({ adult: 'POSSIBLE', violence: 'UNLIKELY', racy: 'LIKELY' }), 'ok');
+    assert.equal(imageAction({}), 'ok');
+  });
+
+  it('accepts numeric enum values and ignores unknown ones', () => {
+    assert.equal(imageAction({ adult: 5 }), 'hide');
+    assert.equal(imageAction({ adult: 4 }), 'review');
+    assert.equal(imageAction({ adult: 'nonsense', violence: 99 }), 'ok');
+  });
+});
+
+describe('parseImagePath', () => {
+  it('recognises post photos and avatars', () => {
+    assert.deepEqual(parseImagePath('posts/u1/p1.jpg'), { kind: 'post', uid: 'u1', postId: 'p1' });
+    assert.deepEqual(parseImagePath('avatars/u1/avatar.jpg'), { kind: 'avatar', uid: 'u1' });
+  });
+
+  it('ignores everything else', () => {
+    assert.equal(parseImagePath('posts/u1/nested/p1.jpg'), null);
+    assert.equal(parseImagePath('other/u1/p1.jpg'), null);
   });
 });
