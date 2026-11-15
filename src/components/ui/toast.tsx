@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet } from 'react-native';
-import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
+import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { radius, spacing } from '@/constants/theme';
@@ -42,11 +42,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {toast ? (
         <Animated.View
           key={toast.id}
-          entering={FadeInDown}
-          exiting={FadeOutDown}
+          entering={FadeInUp}
+          exiting={FadeOutUp}
           accessibilityRole="alert"
           accessibilityLiveRegion="polite"
-          style={[styles.toast, { bottom: insets.bottom + spacing.xl, backgroundColor: background }]}>
+          style={[styles.toast, { top: insets.top + spacing.md, backgroundColor: background }]}>
           <Text variant="label" style={{ color: theme.background }}>
             {toast.text}
           </Text>
@@ -60,7 +60,10 @@ export const useToast = () => useContext(ToastContext);
 
 const styles = StyleSheet.create({
   toast: {
+    // Top of the screen, never the bottom: the keyboard covers the bottom, which hid form errors.
     position: 'absolute',
+    zIndex: 100,
+    elevation: 100,
     left: spacing.lg,
     right: spacing.lg,
     padding: spacing.md,

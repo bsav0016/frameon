@@ -4,6 +4,12 @@ export function formatDate(value: Date): string {
   return value.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 }
 
+/** 872 seconds becomes "14:32". Used for the sign-in lockout countdown. */
+export function formatCountdown(totalSeconds: number): string {
+  const s = Math.max(0, Math.ceil(totalSeconds));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
 export function timeAgo(value: Date, now: Date = new Date()): string {
   const seconds = Math.max(0, Math.floor((now.getTime() - value.getTime()) / 1000));
   if (seconds < 60) return 'just now';

@@ -28,6 +28,13 @@ export function friendlyError(e: unknown): string {
   return 'Something went wrong. Please try again.';
 }
 
+/** Seconds until sign-in may be tried again, when the server says the account is locked. */
+export function retryAfterSeconds(e: unknown): number | null {
+  const details = (e as { details?: { retryAfterSeconds?: unknown } })?.details;
+  const n = details?.retryAfterSeconds;
+  return typeof n === 'number' && Number.isFinite(n) && n > 0 ? n : null;
+}
+
 export async function isUsernameAvailable(username: string): Promise<boolean> {
   const res = await httpsCallable<{ username: string }, { available: boolean }>(functions, 'isUsernameAvailable')({ username });
   return res.data.available;
