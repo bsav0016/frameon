@@ -1,4 +1,4 @@
-import { average, formatCount, formatPrice, parseSaleFields, timeAgo, validateAddress } from '../format';
+import { average, formatCountdown, formatCount, formatPrice, parseSaleFields, timeAgo, validateAddress } from '../format';
 
 describe('parseSaleFields', () => {
   it('treats blank fields as not for sale', () => {
@@ -58,5 +58,15 @@ describe('helpers', () => {
     expect(timeAgo(new Date('2026-11-10T11:30:00Z'), now)).toBe('30m');
     expect(timeAgo(new Date('2026-11-10T09:00:00Z'), now)).toBe('3h');
     expect(timeAgo(new Date('2026-11-08T12:00:00Z'), now)).toBe('2d');
+  });
+});
+
+describe('formatCountdown', () => {
+  it('formats seconds as minutes and seconds', () => {
+    expect(formatCountdown(872)).toBe('14:32');
+    expect(formatCountdown(900)).toBe('15:00');
+    expect(formatCountdown(59.2)).toBe('1:00');
+    expect(formatCountdown(5)).toBe('0:05');
+    expect(formatCountdown(-3)).toBe('0:00');
   });
 });

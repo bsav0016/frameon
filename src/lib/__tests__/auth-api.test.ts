@@ -1,4 +1,4 @@
-import { friendlyError, validateEmail, validatePassword, validateUsername } from '../auth-api';
+import { friendlyError, retryAfterSeconds, validateEmail, validatePassword, validateUsername } from '../auth-api';
 
 jest.mock('../firebase', () => ({ auth: {}, functions: {} }));
 jest.mock('../push', () => ({ unregisterPush: jest.fn() }));
@@ -19,6 +19,14 @@ describe('auth validation', () => {
     expect(validateEmail('nope')).not.toBeNull();
     expect(validatePassword('1234567')).not.toBeNull();
     expect(validatePassword('12345678')).toBeNull();
+  });
+
+  it('reads how long a lockout lasts from the error details', () => {
+    expect(retryAfterSeconds({ code: 'functions/resource-exhausted', details: { retryAfterSeconds: 872 } })).toBe(872);
+    expect(retryAfterSeconds({ details: { retryAfterSeconds: 0 } })).toBeNull();
+    expect(retryAfterSeconds({ details: { retryAfterSeconds: 'soon' } })).toBeNull();
+    expect(retryAfterSeconds(new Error('x'))).toBeNull();
+    expect(retryAfterSeconds(null)).toBeNull();
   });
 
   it('only surfaces server messages from callable errors', () => {

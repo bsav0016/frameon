@@ -6,6 +6,7 @@ import { logger } from 'firebase-functions/v2';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 import { getStripe, stripeKey } from './stripe';
+import { formatWait } from './lockout';
 
 const db = getFirestore();
 const WEB_API_KEY = defineString('WEB_API_KEY');
@@ -19,6 +20,11 @@ const MAX_FAILURES = 5;
 const LOCK_MS = 15 * 60 * 1000;
 // One message for every failure so the endpoint cannot be used to discover which usernames exist.
 const BAD_LOGIN = 'Invalid username or password.';
+// Warn when this few attempts remain before the lock.
+const WARN_AT = 2;
+
+const locked = (ms: number, lead: string) =>
+  new HttpsError('resource-exhausted', `${lead} Try again in ${formatWait(ms)}.`, { retryAfterSeconds: Math.ceil(ms / 1000) });
 
 const str = (v: unknown, field: string, max = 200) => {
   if (typeof v !== 'string' || v.length === 0 || v.length > max) throw new HttpsError('invalid-argument', `Invalid ${field}.`);
@@ -90,13 +96,18 @@ export const signInWithUsername = onCall(opts, async (req) => {
   const attemptsRef = db.doc(`loginAttempts/${lower}`);
   const attempts = (await attemptsRef.get()).data() as { count?: number; lockedUntil?: number } | undefined;
   if (attempts?.lockedUntil && attempts.lockedUntil > Date.now()) {
-    throw new HttpsError('resource-exhausted', 'Too many attempts. Try again in a few minutes.');
+    throw locked(attempts.lockedUntil - Date.now(), 'Too many attempts.');
   }
 
   const fail = async (): Promise<never> => {
     const count = (attempts?.lockedUntil && attempts.lockedUntil <= Date.now() ? 0 : (attempts?.count ?? 0)) + 1;
-    await attemptsRef.set(count >= MAX_FAILURES ? { count: 0, lockedUntil: Date.now() + LOCK_MS } : { count, lockedUntil: 0 });
-    throw new HttpsError('unauthenticated', BAD_LOGIN);
+    if (count >= MAX_FAILURES) {
+      await attemptsRef.set({ count: 0, lockedUntil: Date.now() + LOCK_MS });
+      throw locked(LOCK_MS, `${BAD_LOGIN} Sign-in is now locked.`);
+    }
+    await attemptsRef.set({ count, lockedUntil: 0 });
+    const left = MAX_FAILURES - count;
+    throw new HttpsError('unauthenticated', left <= WARN_AT ? `${BAD_LOGIN} ${left} ${left === 1 ? 'attempt' : 'attempts'} left before a ${formatWait(LOCK_MS)} lock.` : BAD_LOGIN);
   };
 
   const owner = (await db.doc(`usernames/${lower}`).get()).data() as { uid?: string } | undefined;
