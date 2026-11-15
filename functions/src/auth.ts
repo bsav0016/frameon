@@ -107,7 +107,7 @@ export const signInWithUsername = onCall(opts, async (req) => {
     }
     await attemptsRef.set({ count, lockedUntil: 0 });
     const left = MAX_FAILURES - count;
-    throw new HttpsError('unauthenticated', left <= WARN_AT ? `${BAD_LOGIN} ${left} ${left === 1 ? 'attempt' : 'attempts'} left before a ${formatWait(LOCK_MS)} lock.` : BAD_LOGIN);
+    throw new HttpsError('unauthenticated', left <= WARN_AT ? `${BAD_LOGIN} ${left} ${left === 1 ? 'attempt' : 'attempts'} left before a ${LOCK_MS / 60000}-minute lock.` : BAD_LOGIN);
   };
 
   const owner = (await db.doc(`usernames/${lower}`).get()).data() as { uid?: string } | undefined;

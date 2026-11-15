@@ -23,7 +23,8 @@ export function validatePassword(value: string): string | null {
 /** Callable errors carry a user-safe message from the server; anything else gets a generic one. */
 export function friendlyError(e: unknown): string {
   const err = e as { code?: string; message?: string };
-  if (err?.code?.startsWith('functions/') && err.message) return err.message;
+  // The Firebase client appends the HTTP status to every callable error ("... [401]"); people should not see it.
+  if (err?.code?.startsWith('functions/') && err.message) return err.message.replace(/\s*\[\d{3}\]$/, '');
   if (err?.code === 'auth/network-request-failed') return 'No connection. Check your internet and try again.';
   return 'Something went wrong. Please try again.';
 }

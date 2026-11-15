@@ -31,6 +31,8 @@ describe('auth validation', () => {
 
   it('only surfaces server messages from callable errors', () => {
     expect(friendlyError({ code: 'functions/already-exists', message: 'That username is taken.' })).toBe('That username is taken.');
+    expect(friendlyError({ code: 'functions/unauthenticated', message: 'Invalid username or password. [401]' })).toBe('Invalid username or password.');
+    expect(friendlyError({ code: 'functions/resource-exhausted', message: 'Try again in 15 minutes. [429]' })).toBe('Try again in 15 minutes.');
     expect(friendlyError({ code: 'auth/network-request-failed' })).toMatch('connection');
     expect(friendlyError(new Error('stack trace secrets'))).toBe('Something went wrong. Please try again.');
   });
