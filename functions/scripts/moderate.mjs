@@ -8,6 +8,7 @@
 //   node functions/scripts/moderate.mjs unhide post|comment <id>   (also dismisses its reports, so they cannot re-hide it)
 //   node functions/scripts/moderate.mjs delete-post <postId>      (the onPostDeleted function removes the photo, ratings, comments)
 //   node functions/scripts/moderate.mjs suspend <uid>             (disables sign-in; `unsuspend <uid>` reverses it)
+//   node functions/scripts/moderate.mjs make-moderator <uid>      (shows the Hide post button in the app; `remove-moderator <uid>` reverses it)
 //   node functions/scripts/moderate.mjs dismiss <reportId>        (also: `actioned <reportId>`)
 //
 // Set FIREBASE_PROJECT to target another project; the default is frameonnew.
@@ -30,7 +31,20 @@ function pathFor(type, id) {
 
 async function setStatus(type, id, status) {
   const ref = db.doc(pathFor(type, id));
-  if (!(await ref.get()).exists) throw new Error(`${ref.path} does not exist`);
+  const snap = await ref.get();
+  if (!snap.exists) throw new Error(`${ref.path} does not exist`);
+  const data = snap.data();
+  if (status === 'hidden' && data.status !== 'hidden') {
+    // Same notice the functions send, so the owner is told however the item was hidden.
+    const owner = data.ownerUid ?? data.authorUid;
+    if (owner) {
+      await db.collection(`notifications/${owner}/items`).add({
+        type: 'removal', targetType: type, fromUid: 'system', fromUsername: 'FrameOn', fromPhotoURL: null,
+        postId: type === 'post' ? snap.id : ref.parent.parent.id, postImageURL: type === 'post' ? (data.imageURL ?? null) : null,
+        stars: null, orderId: null, read: false, createdAt: FieldValue.serverTimestamp(),
+      });
+    }
+  }
   await ref.update(
     status === 'hidden'
       ? { status, hiddenAt: FieldValue.serverTimestamp(), hiddenReason: 'moderator' }
@@ -70,12 +84,17 @@ switch (cmd) {
     await getAuth().updateUser(a, { disabled: cmd === 'suspend' });
     console.log(`${a} is now ${cmd === 'suspend' ? 'suspended' : 'active'}`);
     break;
+  case 'make-moderator':
+  case 'remove-moderator':
+    await db.doc(`users/${a}`).set({ moderator: cmd === 'make-moderator' }, { merge: true });
+    console.log(`${a} is ${cmd === 'make-moderator' ? 'now' : 'no longer'} a moderator`);
+    break;
   case 'dismiss':
   case 'actioned':
     await db.doc(`reports/${a}`).update({ status: cmd === 'dismiss' ? 'dismissed' : 'actioned', resolvedAt: FieldValue.serverTimestamp() });
     console.log(`Report ${a} marked ${cmd === 'dismiss' ? 'dismissed' : 'actioned'}`);
     break;
   default:
-    console.error('Commands: list | hide|unhide post|comment <id> | delete-post <postId> | suspend|unsuspend <uid> | dismiss|actioned <reportId>');
+    console.error('Commands: list | hide|unhide post|comment <id> | delete-post <postId> | suspend|unsuspend <uid> | make-moderator|remove-moderator <uid> | dismiss|actioned <reportId>');
     process.exit(1);
 }

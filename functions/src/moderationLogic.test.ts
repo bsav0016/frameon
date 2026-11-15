@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { AUTO_HIDE_REPORTS, distinctReporters, imageAction, parseImagePath, shouldAutoHide, targetPath } from './moderationLogic';
+import {
+  AUTO_HIDE_REPORTS, distinctReporters, imageAction, isModerator, parseImagePath, parseModerateRequest, removalText, shouldAutoHide, targetPath,
+} from './moderationLogic';
 
 describe('targetPath', () => {
   it('maps posts and comments to their documents', () => {
@@ -71,5 +73,32 @@ describe('parseImagePath', () => {
   it('ignores everything else', () => {
     assert.equal(parseImagePath('posts/u1/nested/p1.jpg'), null);
     assert.equal(parseImagePath('other/u1/p1.jpg'), null);
+  });
+});
+
+describe('removal notices', () => {
+  it('names what was removed', () => {
+    assert.match(removalText('post').body, /Your post was removed/);
+    assert.match(removalText('comment').body, /Your comment was removed/);
+    assert.match(removalText('avatar').body, /Your profile photo was removed/);
+    assert.equal(removalText('post').title, 'Content removed');
+  });
+});
+
+describe('moderator requests', () => {
+  it('only a user doc marked moderator is a moderator', () => {
+    assert.equal(isModerator({ moderator: true }), true);
+    assert.equal(isModerator({ moderator: 'true' }), false);
+    assert.equal(isModerator({}), false);
+    assert.equal(isModerator(undefined), false);
+  });
+
+  it('accepts only well formed hide and unhide requests', () => {
+    assert.deepEqual(parseModerateRequest({ targetType: 'post', targetId: 'p1', action: 'hide' }), { targetType: 'post', targetId: 'p1', action: 'hide' });
+    assert.deepEqual(parseModerateRequest({ targetType: 'comment', targetId: 'p1/c1', action: 'unhide' }), { targetType: 'comment', targetId: 'p1/c1', action: 'unhide' });
+    assert.equal(parseModerateRequest({ targetType: 'user', targetId: 'u1', action: 'hide' }), null);
+    assert.equal(parseModerateRequest({ targetType: 'post', targetId: 'p1/c1', action: 'hide' }), null);
+    assert.equal(parseModerateRequest({ targetType: 'post', targetId: 'p1', action: 'delete' }), null);
+    assert.equal(parseModerateRequest(null), null);
   });
 });

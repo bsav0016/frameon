@@ -10,7 +10,7 @@ import { markAllRead } from '@/lib/data/notifications';
 import { timeAgo } from '@/lib/format';
 import type { AppNotification } from '@/lib/models';
 import { useNotifications, useUid } from '@/lib/queries';
-import { postHref, userHref } from '@/lib/routes';
+import { notificationTarget } from '@/lib/notification-target';
 
 function describe(n: AppNotification) {
   switch (n.type) {
@@ -22,6 +22,8 @@ function describe(n: AppNotification) {
       return 'started following you';
     case 'purchase':
       return 'bought your art';
+    case 'removal':
+      return `removed your ${n.targetType === 'avatar' ? 'profile photo' : n.targetType} for breaking the rules. Contact support if you think this is a mistake.`;
   }
 }
 
@@ -38,7 +40,10 @@ export default function NotificationsScreen() {
     }, [uid]),
   );
 
-  const open = (n: AppNotification) => router.push(n.type === 'purchase' ? ('/orders' as never) : n.postId ? postHref(n.postId) : userHref(n.fromUid));
+  const open = (n: AppNotification) => {
+    const target = notificationTarget({ type: n.type, postId: n.postId, fromUid: n.fromUid });
+    if (target) router.push(target);
+  };
 
   return (
     <FlatList

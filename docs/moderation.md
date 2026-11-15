@@ -22,6 +22,11 @@ Hidden posts and comments disappear from feeds, search, profiles and comment lis
 - Set the moderator's uid for alerts: add `MODERATOR_UID=<your uid>` to `functions/.env.frameonnew`, then deploy functions. Your account must be signed in on a device that registered for push (Settings). Without it the function only logs.
 - `gcloud auth application-default login` so the script can use your credentials.
 
+## Hiding from the app, and telling the owner
+- **Owner notice:** whenever a post, comment or avatar is hidden (auto-hide, image screening, the app button or `moderate.mjs hide`), its owner gets a "Content removed" notification and push. Tapping it opens the post, where they see the removed notice.
+- **Hide button:** a moderator sees **Hide post (moderator)** / **Restore post (moderator)** on any post. It calls the `moderateContent` function, which checks on the server that the caller's private user doc has `moderator: true`. Hiding closes the post's open reports as actioned; restoring dismisses them.
+- **Making someone a moderator** (Admin SDK only, clients cannot write user docs): `node functions/scripts/moderate.mjs make-moderator <uid>`; `remove-moderator <uid>` reverses it.
+
 ## Daily tools
 `node functions/scripts/moderate.mjs <command>` (project `frameonnew`, override with `FIREBASE_PROJECT`):
 
@@ -32,6 +37,7 @@ Hidden posts and comments disappear from feeds, search, profiles and comment lis
 | `unhide post <id>` | restore (restoring after a mistaken auto-hide is safe: resolved reports no longer count) |
 | `delete-post <id>` | delete; `onPostDeleted` removes the photo, ratings, comments |
 | `suspend <uid>` / `unsuspend <uid>` | disable or enable sign-in |
+| `make-moderator <uid>` / `remove-moderator <uid>` | allow or stop the in-app hide button |
 | `dismiss <reportId>` / `actioned <reportId>` | close a report without touching content |
 
 Test the logic with `npm test --prefix functions`.

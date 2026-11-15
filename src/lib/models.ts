@@ -88,7 +88,9 @@ export const orderSchema = z.object({
 export type Order = z.infer<typeof orderSchema> & { id: string };
 
 export const notificationSchema = z.object({
-  type: z.enum(['rating', 'comment', 'follow', 'purchase']),
+  type: z.enum(['rating', 'comment', 'follow', 'purchase', 'removal']),
+  // For removal notices: what was removed. Other notifications leave it out.
+  targetType: z.enum(['post', 'comment', 'avatar']).default('post'),
   fromUid: z.string(),
   fromUsername: z.string(),
   fromPhotoURL: z.string().nullable().default(null),
