@@ -6,7 +6,7 @@ import { deleteDoc, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Platform } from 'react-native';
 
 import { db } from './firebase';
-import { postHref, userHref } from './routes';
+import { notificationTarget } from './notification-target';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
@@ -49,8 +49,6 @@ export async function unregisterPush(): Promise<void> {
 
 /** Opens the relevant screen when a notification is tapped. */
 export function handleNotificationTap(data: Record<string, unknown> | undefined) {
-  if (!data) return;
-  if (data.type === 'purchase') router.push('/orders');
-  else if (typeof data.postId === 'string') router.push(postHref(data.postId));
-  else if (typeof data.fromUid === 'string') router.push(userHref(data.fromUid));
+  const target = notificationTarget(data);
+  if (target) router.push(target);
 }
