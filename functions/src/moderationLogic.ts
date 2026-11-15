@@ -68,3 +68,32 @@ export function parseImagePath(name: string): { kind: 'post'; uid: string; postI
   if (avatar) return { kind: 'avatar', uid: avatar[1] };
   return null;
 }
+
+// ---- removal notices and moderator actions ----
+
+export type RemovalKind = 'post' | 'comment' | 'avatar';
+
+/** What the owner is told when their content is hidden. */
+export function removalText(kind: string): { title: string; body: string } {
+  const what = kind === 'comment' ? 'comment' : kind === 'avatar' ? 'profile photo' : 'post';
+  return { title: 'Content removed', body: `Your ${what} was removed by FrameOn moderators. Contact support if you think this is a mistake.` };
+}
+
+/** Moderators are marked by the server on their private user doc; clients cannot write it. */
+export function isModerator(userDoc: { moderator?: unknown } | undefined): boolean {
+  return userDoc?.moderator === true;
+}
+
+export interface ModerateRequest {
+  targetType: 'post' | 'comment';
+  targetId: string;
+  action: 'hide' | 'unhide';
+}
+
+export function parseModerateRequest(data: unknown): ModerateRequest | null {
+  const d = data as { targetType?: unknown; targetId?: unknown; action?: unknown } | null | undefined;
+  if (!d || (d.targetType !== 'post' && d.targetType !== 'comment')) return null;
+  if (d.action !== 'hide' && d.action !== 'unhide') return null;
+  if (typeof d.targetId !== 'string' || targetPath(d.targetType, d.targetId) === null) return null;
+  return { targetType: d.targetType, targetId: d.targetId, action: d.action };
+}

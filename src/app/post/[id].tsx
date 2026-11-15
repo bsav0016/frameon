@@ -12,7 +12,9 @@ import { useTheme } from '@/hooks/use-theme';
 import { addComment, deleteComment, deletePost, removeRating, setRating, updatePost } from '@/lib/data/posts';
 import { formatCount, formatPrice, parseSaleFields, timeAgo } from '@/lib/format';
 import { isVisibleTo } from '@/lib/moderation';
-import { useCanSell, useComments, useMyRating, usePost, useProfile, useRefreshLists, useUid } from '@/lib/queries';
+import { friendlyError } from '@/lib/auth-api';
+import { moderateContent } from '@/lib/moderation-api';
+import { useCanSell, useComments, useIsModerator, useMyRating, usePost, useProfile, useRefreshLists, useUid } from '@/lib/queries';
 import { userHref } from '@/lib/routes';
 
 export default function PostDetailScreen() {
@@ -29,6 +31,8 @@ export default function PostDetailScreen() {
   const comments = useComments(id);
   const myRating = useMyRating(id);
   const canSell = useCanSell();
+  const isModerator = useIsModerator();
+  const [moderating, setModerating] = useState(false);
 
   const [comment, setComment] = useState('');
   const [sending, setSending] = useState(false);
@@ -51,7 +55,7 @@ export default function PostDetailScreen() {
 
   const p = post.data;
   const isOwner = p.ownerUid === uid;
-  if (!isVisibleTo(p, uid)) {
+  if (!isVisibleTo(p, uid) && !isModerator.data) {
     return <EmptyState icon="eye-off-outline" title="Post removed" message="This post was removed by moderators." />;
   }
   const average = p.ratingCount === 0 ? 0 : p.ratingSum / p.ratingCount;
@@ -108,6 +112,18 @@ export default function PostDetailScreen() {
         },
       },
     ]);
+
+  const moderate = async (action: 'hide' | 'unhide') => {
+    setModerating(true);
+    try {
+      await moderateContent({ targetType: 'post', targetId: id, action });
+      await Promise.all([post.refetch(), refreshLists()]);
+      toast(action === 'hide' ? 'Post hidden. The owner was told.' : 'Post restored.', 'success');
+    } catch (e) {
+      toast(friendlyError(e), 'error');
+    }
+    setModerating(false);
+  };
 
   const reportTarget = (type: 'post' | 'comment', targetId: string) => router.push({ pathname: '/report', params: { type, id: targetId } } as never);
 
@@ -233,11 +249,21 @@ export default function PostDetailScreen() {
               <Button title="Delete" variant="danger" onPress={confirmDelete} style={styles.flex} />
             </View>
           ) : (
+            <>
+            {isModerator.data ? (
+              <Button
+                title={p.status === 'hidden' ? 'Restore post (moderator)' : 'Hide post (moderator)'}
+                variant={p.status === 'hidden' ? 'secondary' : 'danger'}
+                onPress={() => moderate(p.status === 'hidden' ? 'unhide' : 'hide')}
+                loading={moderating}
+              />
+            ) : null}
             <View style={styles.rate}>
               <Text variant="label">{myRating.data ? 'Your rating' : 'Rate this piece'}</Text>
               <StarRating value={myRating.data?.stars ?? 0} size={30} onChange={rate} />
               {myRating.data ? <Button title="Remove rating" variant="ghost" onPress={clearRating} /> : null}
             </View>
+            </>
           )}
         </>
       )}

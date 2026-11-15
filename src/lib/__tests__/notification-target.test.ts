@@ -12,6 +12,11 @@ describe('notificationTarget', () => {
     expect(notificationTarget({ type: 'report', targetType: 'post' })).toBeNull();
   });
 
+  it('opens the post for a removal notice, and nothing when there is none', () => {
+    expect(notificationTarget({ type: 'removal', postId: 'p1', fromUid: 'system' })).toBe('/post/p1');
+    expect(notificationTarget({ type: 'removal', postId: null, fromUid: 'system' })).toBeNull();
+  });
+
   it('keeps the existing behaviour for ordinary notifications', () => {
     expect(notificationTarget({ type: 'purchase' })).toBe('/orders');
     expect(notificationTarget({ type: 'rating', postId: 'p2', fromUid: 'u2' })).toBe('/post/p2');

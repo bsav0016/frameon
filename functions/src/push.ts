@@ -2,10 +2,13 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 
+import { removalText } from './moderationLogic';
+
 const db = getFirestore();
 
 interface Item {
-  type: 'rating' | 'comment' | 'follow' | 'purchase';
+  type: 'rating' | 'comment' | 'follow' | 'purchase' | 'removal';
+  targetType?: string;
   fromUid: string;
   fromUsername: string;
   postId: string | null;
@@ -22,6 +25,8 @@ function message(n: Item): { title: string; body: string } {
       return { title: 'New follower', body: `${n.fromUsername} started following you` };
     case 'purchase':
       return { title: 'You made a sale', body: `${n.fromUsername} bought your art` };
+    case 'removal':
+      return removalText(n.targetType ?? 'post');
   }
 }
 

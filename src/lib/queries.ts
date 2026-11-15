@@ -20,6 +20,16 @@ export const useProfile = (uid?: string) =>
 export const useProfileStats = (uid?: string) =>
   useQuery({ queryKey: ['stats', uid], queryFn: () => getProfileStats(uid!), enabled: !!uid });
 
+/** Whether the current user is a moderator (`moderator: true` on their private user doc, set only by the Admin SDK). */
+export function useIsModerator() {
+  const uid = useUid();
+  return useQuery({
+    queryKey: ['isModerator', uid],
+    enabled: !!uid,
+    queryFn: async () => (await getDoc(doc(db, 'users', uid))).data()?.moderator === true,
+  });
+}
+
 /** Whether the current user finished Stripe onboarding (private user doc, server-written). */
 export function useCanSell() {
   const uid = useUid();

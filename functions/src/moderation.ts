@@ -1,12 +1,13 @@
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
+import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onObjectFinalized } from 'firebase-functions/v2/storage';
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { getStorage } from 'firebase-admin/storage';
 import { defineString } from 'firebase-functions/params';
 
-import { imageAction, parseImagePath, shouldAutoHide, targetPath, type ReportLike } from './moderationLogic';
+import { imageAction, isModerator, parseImagePath, parseModerateRequest, shouldAutoHide, targetPath, type RemovalKind, type ReportLike } from './moderationLogic';
 
 const db = getFirestore();
 
@@ -29,6 +30,35 @@ async function alertModerator(title: string, body: string, data: Record<string, 
   if (!res.ok) logger.error('Expo push request failed', { status: res.status });
 }
 
+/** Tells the owner their content was removed: an in-app notification, which sendPush also delivers as a push. */
+async function noticeRemoval(ownerUid: string, kind: RemovalKind, postId: string | null, postImageURL: string | null) {
+  await db.collection(`notifications/${ownerUid}/items`).add({
+    type: 'removal',
+    targetType: kind,
+    fromUid: 'system',
+    fromUsername: 'FrameOn',
+    fromPhotoURL: null,
+    postId,
+    postImageURL,
+    stars: null,
+    orderId: null,
+    read: false,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+}
+
+/** Hides a post or comment and tells its owner. Does nothing if it is missing or already hidden. */
+async function hideContent(path: string, kind: 'post' | 'comment', reason: string): Promise<boolean> {
+  const ref = db.doc(path);
+  const snap = await ref.get();
+  const data = snap.data() as { ownerUid?: string; authorUid?: string; imageURL?: string; status?: string } | undefined;
+  if (!data || data.status === 'hidden') return false;
+  await ref.update({ status: 'hidden', hiddenAt: FieldValue.serverTimestamp(), hiddenReason: reason });
+  const owner = data.ownerUid ?? data.authorUid;
+  if (owner) await noticeRemoval(owner, kind, kind === 'post' ? snap.id : (ref.parent.parent?.id ?? null), kind === 'post' ? (data.imageURL ?? null) : null);
+  return true;
+}
+
 /**
  * Triages every new report: marks it open, hides a post or comment once enough different people have reported it,
  * and alerts the moderator. Hiding is reversible with `functions/scripts/moderate.mjs unhide`.
@@ -47,8 +77,7 @@ export const onReportCreated = onDocumentCreated({ region: 'us-central1', docume
       const siblings = await db.collection('reports').where('targetType', '==', report.targetType).where('targetId', '==', report.targetId).get();
       const reports = siblings.docs.map((d) => d.data() as ReportLike);
       if (shouldAutoHide(reports, data.ownerUid ?? data.authorUid)) {
-        await target.ref.update({ status: 'hidden', hiddenAt: FieldValue.serverTimestamp(), hiddenReason: 'reports' });
-        hidden = true;
+        hidden = await hideContent(path, report.targetType === 'comment' ? 'comment' : 'post', 'reports');
         logger.info('Auto-hid reported content', { path });
       }
     }
@@ -115,9 +144,7 @@ export const onImageUploaded = onObjectFinalized({ region: 'us-central1', memory
   if (target.kind === 'post') {
     if (action === 'hide') {
       const post = await waitForPost(target.postId);
-      if (post && post.data()?.ownerUid === target.uid) {
-        await post.ref.update({ status: 'hidden', hiddenAt: FieldValue.serverTimestamp(), hiddenReason: 'image' });
-      }
+      if (post && post.data()?.ownerUid === target.uid) await hideContent(`posts/${target.postId}`, 'post', 'image');
     }
     // Hidden or not, a human should look: this also alerts the moderator.
     await fileAutoReport('post', target.postId, summary);
@@ -128,6 +155,34 @@ export const onImageUploaded = onObjectFinalized({ region: 'us-central1', memory
   if (action === 'hide') {
     await db.doc(`profiles/${target.uid}`).update({ photoURL: null });
     await getStorage().bucket(bucket).file(name).delete({ ignoreNotFound: true });
+    await noticeRemoval(target.uid, 'avatar', null, null);
   }
   await fileAutoReport('user', target.uid, summary);
+});
+
+// ---- moderator actions from the app ----
+
+/**
+ * Lets a moderator hide or restore a post or comment from the app. The caller is checked on the server: their private
+ * user doc must carry `moderator: true`, which only the Admin SDK can set. Hiding tells the owner; either way the
+ * item's open reports are closed.
+ */
+export const moderateContent = onCall({ region: 'us-central1', maxInstances: 5, invoker: 'public' }, async (req) => {
+  if (!req.auth) throw new HttpsError('unauthenticated', 'Sign in first.');
+  const me = (await db.doc(`users/${req.auth.uid}`).get()).data();
+  if (!isModerator(me)) throw new HttpsError('permission-denied', 'Moderators only.');
+  const input = parseModerateRequest(req.data);
+  const path = input && targetPath(input.targetType, input.targetId);
+  if (!input || !path) throw new HttpsError('invalid-argument', 'Invalid request.');
+
+  if (input.action === 'hide') {
+    await hideContent(path, input.targetType, 'moderator');
+  } else {
+    const ref = db.doc(path);
+    if (!(await ref.get()).exists) throw new HttpsError('not-found', 'That item no longer exists.');
+    await ref.update({ status: 'active', hiddenAt: FieldValue.delete(), hiddenReason: FieldValue.delete() });
+  }
+  const reports = await db.collection('reports').where('targetType', '==', input.targetType).where('targetId', '==', input.targetId).get();
+  await Promise.all(reports.docs.map((d) => d.ref.update({ status: input.action === 'hide' ? 'actioned' : 'dismissed', resolvedAt: FieldValue.serverTimestamp() })));
+  return { status: input.action === 'hide' ? 'hidden' : 'active' };
 });

@@ -9,6 +9,8 @@ import { postHref, userHref } from './routes';
 export function notificationTarget(data: Record<string, unknown> | undefined): Href | null {
   if (!data) return null;
   if (data.type === 'purchase') return '/orders' as Href;
+  // Removal notices come from the system, so there is no user to open; open the post when there is one.
+  if (data.type === 'removal') return typeof data.postId === 'string' ? postHref(data.postId) : null;
   if (data.type === 'report' && typeof data.targetType === 'string' && typeof data.targetId === 'string') {
     if (data.targetType === 'post') return postHref(data.targetId);
     if (data.targetType === 'comment') return postHref(data.targetId.split('/')[0]);
