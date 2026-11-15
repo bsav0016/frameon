@@ -84,6 +84,7 @@ User-generated content safeguards (Guideline 1.2):
 - Report: the flag icon on any post or comment, and "Report user" in a profile's menu.
 - Block: "Block user" in a profile's menu; blocked users are hidden everywhere. Manage them under Settings > Blocked users.
 - Reports are reviewed within 24 hours; offending content is removed and abusive accounts are suspended.
+- Uploaded photos are screened automatically, and content reported by several people is hidden until reviewed.
 - Delete account: Settings > Delete account (removes profile, posts and comments).
 - Support: savidgeapps@gmail.com
 
@@ -126,4 +127,4 @@ Purchasing: checkout opens Stripe's payment sheet. <Say here whether the backend
 
 ## Known review risk
 
-Apple Guideline 1.2 asks for a way to filter objectionable content, not just report it. FrameOn has terms acceptance, reporting, blocking, a 24 hour review promise and account removal, but no automatic screening of uploaded images. Many apps pass with that, but an automated check on uploads (for example Google Cloud Vision SafeSearch in a Cloud Function that hides flagged posts) would remove the risk. It is the main thing worth considering before submitting to Apple.
+Apple Guideline 1.2 asks for a way to filter objectionable content, not just report it. FrameOn has terms acceptance, reporting, blocking, a 24 hour review promise and account removal. Uploaded images are also screened automatically with Google Cloud Vision SafeSearch (`onImageUploaded`), posts reported by 3 different people are hidden automatically, and the moderator is alerted to every report (see `docs/moderation.md`). These only protect users once the functions are deployed and `MODERATOR_UID` is set, so deploy them before relying on this in review notes.
