@@ -5,6 +5,7 @@ import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { appStoreLink, playStoreLink } from '../src/lib/growth.ts';
 import { LEGAL_UPDATED, PRIVACY, TERMS } from '../src/lib/legal.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -30,6 +31,8 @@ nav{margin-left:auto;display:flex;gap:16px;font-size:15px}nav a{color:var(--prim
 h1{font-size:34px;line-height:1.2;margin:28px 0 4px}h2{font-size:20px;margin:30px 0 4px}
 p{margin:6px 0}.muted{color:var(--muted);font-size:15px}a{color:var(--primary)}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:6px 22px 20px;margin-top:18px}
+.btn{display:inline-block;margin:6px 10px 6px 0;padding:11px 20px;border-radius:12px;background:var(--primary);color:var(--bg);font-weight:700;text-decoration:none}
+ul{padding-left:20px}
 footer{padding-top:36px;padding-bottom:48px;color:var(--muted);font-size:14px}`;
 
 const page = (title, description, body) => `<!doctype html>
@@ -50,7 +53,16 @@ const write = (path, html) => {
   writeFileSync(join(out, path), html);
 };
 
-write('index.html', page('FrameOn', 'FrameOn is an app for sharing and buying original art.', `<h1>FrameOn</h1><p>Share your art, discover artists, and buy original work directly from the maker.</p>
+// Store buttons carry a campaign (web-home) so installs from this page show up by name in App Store Connect.
+const playLink = playStoreLink('web-home');
+const storeButtons = `<a class="btn" href="${esc(appStoreLink('web-home'))}">Get it on the App Store</a>${
+  playLink ? `<a class="btn" href="${esc(playLink)}">Get it on Google Play</a>` : ''
+}`;
+
+write('index.html', page('FrameOn: share and buy original art', 'FrameOn is a free app where artists post their paintings, drawings and prints, build a following, and sell original pieces directly to the people who love them.', `<h1>A home for original art</h1><p>Post your paintings, drawings and prints, follow other artists, and sell your originals directly to the people who love them.</p>
+<p>${storeButtons}</p>
+<div class="card"><h2>For artists</h2><ul><li>Post a photo of your work with a caption, and set a price if you want to sell it.</li><li>Build a profile people can follow, and see ratings and comments on every piece.</li><li>Get paid through Stripe. FrameOn keeps a 5% fee that includes payment processing.</li></ul>
+<h2>For people who love art</h2><ul><li>Follow the artists you like and see their new work first.</li><li>Rate and comment on pieces, and buy an original straight from the person who made it.</li><li>Report anything that does not belong; reports are reviewed within 24 hours.</li></ul></div>
 <div class="card"><h2>Policies</h2><p><a href="/frameon/privacy/">Privacy Policy</a><br><a href="/frameon/terms/">Terms of Use</a></p><h2>Help</h2><p><a href="/frameon/support/">Support</a></p></div>`));
 write('privacy/index.html', page('Privacy Policy - FrameOn', 'How FrameOn collects, uses and protects your information.', legalBody('Privacy Policy', PRIVACY)));
 write('terms/index.html', page('Terms of Use - FrameOn', 'The rules for using FrameOn.', legalBody('Terms of Use', TERMS)));

@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Platform, Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { StarRating } from '@/components/star-rating';
 import { Avatar, Button, EmptyState, Screen, Skeleton, Text, TextField, useToast } from '@/components/ui';
@@ -13,6 +13,7 @@ import { addComment, deleteComment, deletePost, removeRating, setRating, updateP
 import { formatCount, formatPrice, parseSaleFields, timeAgo } from '@/lib/format';
 import { isVisibleTo } from '@/lib/moderation';
 import { friendlyError } from '@/lib/auth-api';
+import { postShareMessage } from '@/lib/growth';
 import { moderateContent } from '@/lib/moderation-api';
 import { useCanSell, useComments, useIsModerator, useMyRating, usePost, useProfile, useRefreshLists, useUid } from '@/lib/queries';
 import { userHref } from '@/lib/routes';
@@ -169,18 +170,32 @@ export default function PostDetailScreen() {
       },
     ]);
 
+  // Plain text through the share sheet: the caption, the artist and a link to the app. No image is attached.
+  const sharePost = async () => {
+    try {
+      await Share.share({ message: postShareMessage(p, Platform.OS) });
+    } catch {
+      toast('Could not open the share sheet.', 'error');
+    }
+  };
+
   return (
     <Screen scroll>
       <Stack.Screen
         options={{
           title: 'Post',
-          headerRight: isOwner
-            ? undefined
-            : () => (
+          headerRight: () => (
+            <View style={styles.headerActions}>
+              <Pressable hitSlop={10} accessibilityRole="button" accessibilityLabel="Share post" onPress={sharePost}>
+                <Ionicons name="share-outline" size={24} color={theme.text} />
+              </Pressable>
+              {isOwner ? null : (
                 <Pressable hitSlop={10} accessibilityRole="button" accessibilityLabel="Report post" onPress={() => reportTarget('post', id)}>
                   <Ionicons name="flag-outline" size={22} color={theme.text} />
                 </Pressable>
-              ),
+              )}
+            </View>
+          ),
         }}
       />
       <Pressable style={styles.owner} accessibilityRole="button" accessibilityLabel={`View ${p.ownerUsername}'s profile`} onPress={() => router.push(userHref(p.ownerUid))}>
@@ -303,6 +318,7 @@ export default function PostDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   flex: { flex: 1 },
   owner: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   image: { width: '100%', aspectRatio: 4 / 5, borderRadius: radius.lg },
