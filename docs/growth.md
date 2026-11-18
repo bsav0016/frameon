@@ -33,10 +33,10 @@ Android shares link to the website until there is a Google Play listing; when th
 you post (an art group, a studio newsletter), pick a name like `reddit-art` (lower case, words and dashes, 40 characters
 at most) and build the link with `appStoreLink('reddit-art')`. Add the name to the table above.
 
-**One value to set: the App Store provider token.** The App Store only reports a campaign link that carries the account's
+**The App Store provider token (already set).** The App Store only reports a campaign link that carries the account's
 provider token (`pt`). In App Store Connect open the app, App Analytics, Campaigns, Create Campaign Link, and copy the
 number after `pt=` into `APP_STORE_PROVIDER_TOKEN` in `src/lib/growth.ts`. It is public and the same for every app on the
-account. Until it is set the links work but the App Store does not report their campaign.
+account. The provider token is set (122126127, 2026-11-18), so the App Store reports these campaigns in App Analytics.
 
 ## Where to read results
 

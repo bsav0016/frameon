@@ -15,7 +15,7 @@ export const PLAY_STORE_URL: string | null = null;
  * same for every app on the account. Leave it empty until it is known: links then carry the campaign name but the App
  * Store will not report on it.
  */
-export const APP_STORE_PROVIDER_TOKEN = '';
+export const APP_STORE_PROVIDER_TOKEN = '122126127';
 
 const CAMPAIGN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
