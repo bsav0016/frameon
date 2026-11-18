@@ -22,6 +22,10 @@ Stripe's native SDK is not in Expo Go, so payments need a development build (`ea
 | `npm run typecheck` | `tsc --noEmit`                |
 | `npm test`          | Jest                          |
 
+## Growth
+
+Posts and profiles can be shared from the app (plain text and a link, no image), the website has a landing page, and store links carry campaign tags so installs can be told apart in App Store Connect. See [docs/growth.md](docs/growth.md).
+
 ## Layout
 
 - `src/app` routes (expo-router); `(auth)` when signed out, `(tabs)` when signed in

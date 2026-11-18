@@ -3,7 +3,7 @@ name: Pages
 on:
   push:
     branches: [main]
-    paths: ['src/lib/legal.ts', 'scripts/build-site.mjs', 'assets/images/logo.png', '.github/workflows/pages.yml']
+    paths: ['src/lib/legal.ts', 'src/lib/growth.ts', 'scripts/build-site.mjs', 'assets/images/logo.png', '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions:

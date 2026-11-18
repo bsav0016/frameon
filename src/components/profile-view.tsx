@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, Share, StyleSheet, View } from 'react-native';
 
 import { PostGrid } from '@/components/post-grid';
 import { StarRating } from '@/components/star-rating';
@@ -9,6 +9,7 @@ import { spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { follow, unfollow } from '@/lib/data/social';
 import { formatCount } from '@/lib/format';
+import { profileShareMessage } from '@/lib/growth';
 import { useIsFollowing, useProfile, useProfileStats, useRefreshLists, useUid, useUserPosts } from '@/lib/queries';
 import { settingsHref } from '@/lib/routes';
 
@@ -45,6 +46,14 @@ export function ProfileView({ uid }: { uid: string }) {
       toast('Could not update. Please try again.', 'error');
     }
     setBusy(false);
+  };
+
+  const shareProfile = async (username: string) => {
+    try {
+      await Share.share({ message: profileShareMessage(username, Platform.OS) });
+    } catch {
+      toast('Could not open the share sheet.', 'error');
+    }
   };
 
   if (profile.isLoading) {
@@ -90,7 +99,10 @@ export function ProfileView({ uid }: { uid: string }) {
         </View>
       ) : null}
       {own ? (
-        <Button title="Edit profile" variant="secondary" onPress={() => router.push(settingsHref)} />
+        <View style={styles.actions}>
+          <Button title="Edit profile" variant="secondary" onPress={() => router.push(settingsHref)} style={styles.flex} />
+          <Button title="Share profile" variant="secondary" onPress={() => shareProfile(p.username)} style={styles.flex} />
+        </View>
       ) : (
         <Button
           title={following.data ? 'Following' : 'Follow'}
@@ -129,4 +141,5 @@ const styles = StyleSheet.create({
   stat: { alignItems: 'center' },
   bio: { marginTop: spacing.xs },
   seller: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  actions: { flexDirection: 'row', gap: spacing.sm },
 });
