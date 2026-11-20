@@ -22,6 +22,10 @@ function describe(n: AppNotification) {
       return 'started following you';
     case 'purchase':
       return 'bought your art';
+    case 'order_shipped':
+      return 'marked your order shipped';
+    case 'order_delivered':
+      return 'order was marked delivered';
     case 'order_refunded':
       return '· order refunded';
     case 'order_disputed':

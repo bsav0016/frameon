@@ -21,6 +21,8 @@ describe('notificationTarget', () => {
     expect(notificationTarget({ type: 'purchase' })).toBe('/orders');
     expect(notificationTarget({ type: 'order_refunded', postId: 'p1', fromUid: 'u1' })).toBe('/orders');
     expect(notificationTarget({ type: 'order_disputed', postId: 'p1', fromUid: 'u1' })).toBe('/orders');
+    expect(notificationTarget({ type: 'order_shipped', postId: 'p1', fromUid: 'u1' })).toBe('/orders');
+    expect(notificationTarget({ type: 'order_delivered', postId: 'p1', fromUid: 'u1' })).toBe('/orders');
     expect(notificationTarget({ type: 'rating', postId: 'p2', fromUid: 'u2' })).toBe('/post/p2');
     expect(notificationTarget({ type: 'follow', postId: null, fromUid: 'u3' })).toBe('/user/u3');
     expect(notificationTarget({})).toBeNull();
