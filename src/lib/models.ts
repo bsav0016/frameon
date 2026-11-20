@@ -8,6 +8,8 @@ const timestamp = z.preprocess((v) => {
   if (v instanceof Date) return v;
   return new Date();
 }, z.date());
+// For fields that only exist once something has happened: missing stays null instead of becoming "now".
+const optionalTimestamp = z.preprocess((v) => (v instanceof Timestamp ? v.toDate() : v instanceof Date ? v : null), z.date().nullable());
 
 export const profileSchema = z.object({
   username: z.string(),
@@ -74,6 +76,10 @@ export const addressSchema = z.object({
 });
 export type Address = z.infer<typeof addressSchema>;
 
+export const ORDER_STATUSES = ['paid', 'shipped', 'delivered', 'refunded', 'disputed'] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
+// Keep in step with functions/src/orderLogic.ts, which owns the transitions. Orders are written only by Cloud Functions.
 export const orderSchema = z.object({
   postId: z.string(),
   postImageURL: z.string(),
@@ -81,8 +87,12 @@ export const orderSchema = z.object({
   buyerUsername: z.string(),
   sellerUid: z.string(),
   amountCents: z.number().int(),
-  status: z.enum(['paid', 'refunded']),
+  status: z.enum(ORDER_STATUSES),
   shippingAddress: addressSchema,
+  carrier: z.string().nullable().default(null),
+  trackingNumber: z.string().nullable().default(null),
+  shippedAt: optionalTimestamp,
+  deliveredAt: optionalTimestamp,
   createdAt: timestamp,
 });
 export type Order = z.infer<typeof orderSchema> & { id: string };

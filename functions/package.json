@@ -8,7 +8,7 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "tsc && node --test lib/moderationLogic.test.js lib/lockout.test.js",
+    "test": "tsc && node --test lib/moderationLogic.test.js lib/lockout.test.js lib/orderLogic.test.js",
     "test:payments": "tsc && node --test lib/payments.test.js"
   },
   "dependencies": {

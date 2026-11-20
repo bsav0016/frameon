@@ -15,9 +15,11 @@ notifications and anything touching another user is written by Cloud Functions (
 | `posts/{id}/comments/{id}` | signed in | create; delete own or on own post | `commentCount`, `status` |
 | `purchases/{seller}_{buyer}` | none | none | webhook; gates seller reviews |
 | `sellerReviews/{seller}_{rater}` | signed in | buyers only | seller rating totals |
-| `orders/{id}` | buyer, seller | none | webhook |
+| `orders/{id}` | buyer, seller | none | webhook, order callables |
 | `notifications/{uid}/items/{id}` | owner | mark read, delete | triggers |
 | `reports/{id}` | none | create only | |
+
+Orders move through `paid`, `shipped`, `delivered`, `refunded` and `disputed`. The legal moves live in one pure function, `functions/src/orderLogic.ts` (unit-tested), so the webhook, callables and scheduler cannot disagree. Clients never write orders, which the rules tests check. Shipped orders carry `carrier`, `trackingNumber` and `shippedAt`; delivered ones `deliveredAt` (and `deliveredBy: 'auto'` when the scheduler did it); a disputed order keeps `statusBeforeDispute` and `disputeOutcome`. All of these are missing on older orders, and the app reads them as empty. The Stripe webhook does not use the new statuses yet; the app build that understands them has to be out before functions start writing them, because older builds drop orders whose status they do not know.
 
 Money is integer cents everywhere. Price 0 with quantity 0 means not for sale; otherwise $0.50 to $10,000 and
 quantity 1 to 10,000.
