@@ -65,7 +65,8 @@
     "build:check": "expo export --platform ios --platform android --output-dir dist",
     "update:preview": "node scripts/publish-update.js preview",
     "update:production": "node scripts/publish-update.js production",
-    "test:rules": "firebase emulators:exec --only firestore,storage --project demo-frameon \"jest -c jest.rules.config.js --runInBand\""
+    "test:rules": "firebase emulators:exec --only firestore,storage --project demo-frameon \"jest -c jest.rules.config.js --runInBand\"",
+    "test:functions": "firebase emulators:exec --only firestore --project demo-frameon \"npm run test:payments --prefix functions\""
   },
   "private": true,
   "jest": {

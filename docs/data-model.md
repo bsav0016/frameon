@@ -25,6 +25,6 @@ quantity 1 to 10,000.
 Known limit: the feed queries `ownerUid in [...]` in chunks of 30 and merges, so very large follow lists are
 approximate. A fan-out feed collection would remove this if it matters.
 
-Tests: `npm run test:rules` (needs Java) runs the rules against the emulators.
+Tests: `npm run test:rules` (needs Java) runs the rules against the emulators. `npm run test:functions` (also needs Java) runs the Stripe webhook tests against the Firestore emulator with a fake Stripe client; both run in CI.
 
 `status` (`active` or `hidden`) on posts and comments is written by moderators only (Admin SDK). A missing value means active. Clients filter hidden items out client-side (the owner still sees their own hidden post), and `createPaymentIntent` rejects hidden posts. Filtering is client-side on purpose: a `where('status')` query would need a backfill and new indexes.
