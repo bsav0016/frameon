@@ -243,6 +243,16 @@ describe('orders', () => {
     await assertFails(updateDoc(doc(as(BOB), 'orders', 'o1'), { status: 'refunded' }));
     await assertFails(setDoc(doc(as(BOB), 'orders', 'o2'), { buyerUid: BOB, sellerUid: ALICE }));
   });
+
+  it('cannot be shipped, delivered or deleted by the people in them', async () => {
+    // Only the Cloud Functions move an order through its lifecycle, so a seller cannot self-report shipping.
+    for (const who of [ALICE, BOB]) {
+      await assertFails(updateDoc(doc(as(who), 'orders', 'o1'), { status: 'shipped', carrier: 'USPS', trackingNumber: '9400111899223197428490' }));
+      await assertFails(updateDoc(doc(as(who), 'orders', 'o1'), { status: 'delivered' }));
+      await assertFails(updateDoc(doc(as(who), 'orders', 'o1'), { trackingNumber: '1234 5678' }));
+      await assertFails(deleteDoc(doc(as(who), 'orders', 'o1')));
+    }
+  });
 });
 
 describe('notifications', () => {

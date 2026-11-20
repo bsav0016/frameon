@@ -13,6 +13,14 @@ import type { Order } from '@/lib/models';
 import { useUid } from '@/lib/queries';
 import { postHref } from '@/lib/routes';
 
+const ORDER_STATUS_LABEL: Record<Order['status'], string> = {
+  paid: 'Paid',
+  shipped: 'Shipped',
+  delivered: 'Delivered',
+  refunded: 'Refunded',
+  disputed: 'Disputed',
+};
+
 function OrderRow({ order, role }: { order: Order; role: 'buyer' | 'seller' }) {
   const theme = useTheme();
   const a = order.shippingAddress;
@@ -25,12 +33,12 @@ function OrderRow({ order, role }: { order: Order; role: 'buyer' | 'seller' }) {
           <Text variant="caption" muted>
             {formatDate(order.createdAt)}
           </Text>
-          <Text variant="caption" style={{ color: order.status === 'paid' ? theme.success : theme.danger }}>
-            {order.status === 'paid' ? 'Paid' : 'Refunded'}
+          <Text variant="caption" style={{ color: order.status === 'refunded' || order.status === 'disputed' ? theme.danger : theme.success }}>
+            {ORDER_STATUS_LABEL[order.status]}
           </Text>
         </View>
       </Pressable>
-      {role === 'seller' && order.status === 'paid' ? (
+      {role === 'seller' && (order.status === 'paid' || order.status === 'shipped') ? (
         <View>
           <Text variant="caption" muted>
             Ship to {order.buyerUsername}
@@ -45,7 +53,7 @@ function OrderRow({ order, role }: { order: Order; role: 'buyer' | 'seller' }) {
           </Text>
         </View>
       ) : null}
-      {role === 'buyer' && order.status === 'paid' ? (
+      {role === 'buyer' && order.status !== 'refunded' ? (
         <Button title="Review seller" variant="secondary" onPress={() => router.push(`/review/${order.sellerUid}` as never)} />
       ) : null}
     </View>
