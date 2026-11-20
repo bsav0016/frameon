@@ -3,6 +3,7 @@ import { logger } from 'firebase-functions/v2';
 import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
 import type Stripe from 'stripe';
 
+import { disputeClosed, disputeOpened, refundOrder } from './orderEvents';
 import { getStripe as stripe, stripeKey, webhookSecret } from './stripe';
 
 const db = getFirestore();
@@ -197,6 +198,13 @@ async function fulfill(pi: Stripe.PaymentIntent) {
   }
 }
 
+async function paymentIntentOf(dispute: Stripe.Dispute): Promise<string | null> {
+  if (dispute.payment_intent) return typeof dispute.payment_intent === 'string' ? dispute.payment_intent : dispute.payment_intent.id;
+  const chargeId = typeof dispute.charge === 'string' ? dispute.charge : dispute.charge.id;
+  const charge = await stripe().charges.retrieve(chargeId);
+  return typeof charge.payment_intent === 'string' ? charge.payment_intent : (charge.payment_intent?.id ?? null);
+}
+
 export const stripeWebhook = onRequest({ region: REGION, invoker: 'public', secrets: [stripeKey, webhookSecret] }, async (req, res) => {
   const signature = req.headers['stripe-signature'];
   let event: Stripe.Event;
@@ -215,7 +223,20 @@ export const stripeWebhook = onRequest({ region: REGION, invoker: 'public', secr
       case 'charge.refunded': {
         const charge = event.data.object;
         const id = typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent?.id;
-        if (id && charge.refunded) await db.doc(`orders/${id}`).update({ status: 'refunded' }).catch(() => undefined);
+        if (id && charge.refunded) await refundOrder(id);
+        break;
+      }
+      case 'charge.dispute.created':
+      case 'charge.dispute.closed': {
+        const dispute = event.data.object;
+        const id = await paymentIntentOf(dispute);
+        if (!id) {
+          logger.warn('dispute without a payment intent', { dispute: dispute.id });
+          break;
+        }
+        if (event.type === 'charge.dispute.created') await disputeOpened(id, dispute.reason);
+        // Other closing statuses (such as an early warning that was withdrawn) do not change money.
+        else if (dispute.status === 'won' || dispute.status === 'lost') await disputeClosed(id, dispute.status === 'won');
         break;
       }
       case 'account.updated': {

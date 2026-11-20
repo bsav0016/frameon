@@ -22,6 +22,10 @@ function describe(n: AppNotification) {
       return 'started following you';
     case 'purchase':
       return 'bought your art';
+    case 'order_refunded':
+      return '· order refunded';
+    case 'order_disputed':
+      return '· payment disputed';
     case 'removal':
       return `removed your ${n.targetType === 'avatar' ? 'profile photo' : n.targetType} for breaking the rules. Contact support if you think this is a mistake.`;
   }

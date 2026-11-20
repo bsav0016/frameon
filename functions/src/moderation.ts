@@ -5,30 +5,11 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onObjectFinalized } from 'firebase-functions/v2/storage';
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { getStorage } from 'firebase-admin/storage';
-import { defineString } from 'firebase-functions/params';
 
 import { imageAction, isModerator, parseImagePath, parseModerateRequest, shouldAutoHide, targetPath, type RemovalKind, type ReportLike } from './moderationLogic';
+import { alertModerator } from './alerts';
 
 const db = getFirestore();
-
-// uid of the moderator's account. Their registered devices receive the alerts. Empty means log only.
-const MODERATOR_UID = defineString('MODERATOR_UID', { default: '' });
-
-async function alertModerator(title: string, body: string, data: Record<string, unknown>) {
-  const uid = MODERATOR_UID.value();
-  if (!uid) {
-    logger.warn('MODERATOR_UID is not set; moderation alert not pushed', { title, body });
-    return;
-  }
-  const devices = await db.collection(`users/${uid}/devices`).get();
-  if (devices.empty) return;
-  const res = await fetch('https://exp.host/--/api/v2/push/send', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(devices.docs.map((d) => ({ to: d.id, title, body, sound: 'default', data }))),
-  });
-  if (!res.ok) logger.error('Expo push request failed', { status: res.status });
-}
 
 /** Tells the owner their content was removed: an in-app notification, which sendPush also delivers as a push. */
 async function noticeRemoval(ownerUid: string, kind: RemovalKind, postId: string | null, postImageURL: string | null) {
