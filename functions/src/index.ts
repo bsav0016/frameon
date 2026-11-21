@@ -106,5 +106,6 @@ export const onPostDeleted = onDocumentDeleted({ ...opts, document: 'posts/{post
 });
 export * from './auth';
 export * from './moderation';
+export * from './orders';
 export * from './payments';
 export * from './push';

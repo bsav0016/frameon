@@ -7,7 +7,7 @@ import { removalText } from './moderationLogic';
 const db = getFirestore();
 
 interface Item {
-  type: 'rating' | 'comment' | 'follow' | 'purchase' | 'removal' | 'order_refunded' | 'order_disputed';
+  type: 'rating' | 'comment' | 'follow' | 'purchase' | 'removal' | 'order_refunded' | 'order_disputed' | 'order_shipped' | 'order_delivered';
   targetType?: string;
   fromUid: string;
   fromUsername: string;
@@ -27,6 +27,10 @@ function message(n: Item): { title: string; body: string } {
       return { title: 'You made a sale', body: `${n.fromUsername} bought your art` };
     case 'removal':
       return removalText(n.targetType ?? 'post');
+    case 'order_shipped':
+      return { title: 'Your order shipped', body: `${n.fromUsername} marked your order shipped. Tap for the tracking number.` };
+    case 'order_delivered':
+      return { title: 'Order delivered', body: `${n.fromUsername}'s order is marked delivered.` };
     case 'order_refunded':
       return { title: 'Order refunded', body: 'An order was refunded.' };
     case 'order_disputed':
