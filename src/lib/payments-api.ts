@@ -24,3 +24,13 @@ export async function refreshPayoutStatus(): Promise<boolean> {
   const status = await httpsCallable<unknown, { chargesEnabled: boolean }>(functions, 'syncSellerStatus')();
   return status.data.chargesEnabled;
 }
+
+/** Seller: the piece is on its way. The buyer is notified. */
+export async function markOrderShipped(orderId: string, carrier: string, trackingNumber: string) {
+  await httpsCallable<{ orderId: string; carrier: string; trackingNumber: string }, { ok: true }>(functions, 'markOrderShipped')({ orderId, carrier, trackingNumber });
+}
+
+/** Buyer: the piece arrived. The seller is notified. */
+export async function confirmDelivery(orderId: string) {
+  await httpsCallable<{ orderId: string }, { ok: true }>(functions, 'confirmDelivery')({ orderId });
+}

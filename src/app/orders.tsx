@@ -1,64 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { Image } from 'expo-image';
-import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { Button, EmptyState, Screen, Skeleton, Text } from '@/components/ui';
-import { radius, spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { OrderRow } from '@/components/order-row';
+import { Button, EmptyState, Screen, Skeleton } from '@/components/ui';
+import { spacing } from '@/constants/theme';
 import { listOrders } from '@/lib/data/orders';
-import { formatDate, formatPrice } from '@/lib/format';
-import type { Order } from '@/lib/models';
 import { useUid } from '@/lib/queries';
-import { postHref } from '@/lib/routes';
-
-const ORDER_STATUS_LABEL: Record<Order['status'], string> = {
-  paid: 'Paid',
-  shipped: 'Shipped',
-  delivered: 'Delivered',
-  refunded: 'Refunded',
-  disputed: 'Disputed',
-};
-
-function OrderRow({ order, role }: { order: Order; role: 'buyer' | 'seller' }) {
-  const theme = useTheme();
-  const a = order.shippingAddress;
-  return (
-    <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-      <Pressable style={styles.top} accessibilityRole="button" accessibilityLabel="Open post" onPress={() => router.push(postHref(order.postId))}>
-        <Image source={{ uri: order.postImageURL }} style={styles.thumb} contentFit="cover" />
-        <View style={styles.flex}>
-          <Text variant="label">{formatPrice(order.amountCents)}</Text>
-          <Text variant="caption" muted>
-            {formatDate(order.createdAt)}
-          </Text>
-          <Text variant="caption" style={{ color: order.status === 'refunded' || order.status === 'disputed' ? theme.danger : theme.success }}>
-            {ORDER_STATUS_LABEL[order.status]}
-          </Text>
-        </View>
-      </Pressable>
-      {role === 'seller' && (order.status === 'paid' || order.status === 'shipped') ? (
-        <View>
-          <Text variant="caption" muted>
-            Ship to {order.buyerUsername}
-          </Text>
-          <Text>{a.name}</Text>
-          <Text>
-            {a.line1}
-            {a.line2 ? `, ${a.line2}` : ''}
-          </Text>
-          <Text>
-            {a.city}, {a.state} {a.postalCode} {a.country}
-          </Text>
-        </View>
-      ) : null}
-      {role === 'buyer' && order.status !== 'refunded' ? (
-        <Button title="Review seller" variant="secondary" onPress={() => router.push(`/review/${order.sellerUid}` as never)} />
-      ) : null}
-    </View>
-  );
-}
 
 export default function OrdersScreen() {
   const uid = useUid();
@@ -90,7 +38,4 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   tabs: { flexDirection: 'row', gap: spacing.sm, padding: spacing.lg },
   list: { padding: spacing.lg, paddingTop: 0, gap: spacing.md },
-  card: { padding: spacing.md, gap: spacing.md, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth },
-  top: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
-  thumb: { width: 64, height: 64, borderRadius: radius.md },
 });
