@@ -50,6 +50,17 @@ Everything the code needs is done except the items below, which need your accoun
 - [ ] Moderation: set `MODERATOR_UID` for report alerts and deploy functions (see `docs/moderation.md`); act on alerts with `functions/scripts/moderate.mjs` within 24 hours.
 - [ ] Remove any leftover `zz_test_*` accounts from Authentication.
 
+## Order lifecycle go-live (shipping, delivery, refunds, disputes)
+
+Code is merged (issue #29); nothing below is done until you do it. **Order matters:** installed app builds drop orders and notifications whose status or type they do not know, so the app goes first.
+
+1. **App first.** Publish the over-the-air update (`npm run update:preview`, check, then `npm run update:production`, see section 5) so installed 2.0.0 builds understand `shipped`, `delivered`, `disputed` and the new notification types. These changes are JavaScript only.
+2. **Functions, rules and indexes.** `npx firebase deploy --project frameonnew` (functions, Firestore rules, indexes). The new `autoCompleteOrders` schedule needs the **Cloud Scheduler API** enabled on the project (the deploy offers to enable it) and the `orders` `status` + `shippedAt` index to finish building (Firebase console, Firestore, Indexes) before the first scheduled run.
+3. **Stripe webhook.** In the Stripe dashboard (live mode), add `charge.dispute.created` and `charge.dispute.closed` to the existing webhook endpoint's events. `charge.refunded` and `payment_intent.succeeded` are already subscribed.
+4. **Alerts.** `MODERATOR_UID` must be set (see `docs/moderation.md`); dispute alerts use it.
+5. **One real order, end to end** (this is also the outstanding purchase test above): buy the $1 piece, mark it shipped with a tracking number as the seller, confirm the buyer was notified, confirm delivery as the buyer, then refund it in the Stripe dashboard and check the order shows Refunded, the piece is back in stock only if it had not shipped, and both sides were notified.
+6. Tick **Live** on issue #29 when 1 to 5 are done.
+
 ## 5. Over-the-air updates (after the store builds are live)
 
 Builds from 2.0.0 on include `expo-updates` and listen to the channel named in `eas.json` (`production` for store builds). An update only reaches builds with the **same app version** (`runtimeVersion` follows `version` in `app.json`).

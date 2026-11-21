@@ -29,3 +29,10 @@ export const auth =
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const functions = getFunctions(app);
+
+// Local emulator mode, used only to photograph screens that need data a real payment would create.
+// Expo inlines the variable, so builds without it contain none of this.
+if (process.env.EXPO_PUBLIC_FIREBASE_EMULATOR === '1') {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('./firebase-emulator');
+}

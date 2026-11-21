@@ -19,7 +19,7 @@ Hidden posts and comments disappear from feeds, search, profiles and comment lis
 
 ## Setup (once)
 - Enable the **Cloud Vision API** on the `frameonnew` project (needs billing) and add a budget alert. The function's storage trigger must be in the same region as the storage bucket; if the deploy complains, change `region` on `onImageUploaded`.
-- Set the moderator's uid for alerts: add `MODERATOR_UID=<your uid>` to `functions/.env.frameonnew`, then deploy functions. Your account must be signed in on a device that registered for push (Settings). Without it the function only logs.
+- Set the moderator's uid for alerts: add `MODERATOR_UID=<your uid>` to `functions/.env.frameonnew`, then deploy functions. Your account must be signed in on a device that registered for push (Settings). Without it the function only logs. The same alert channel also pushes Stripe dispute alerts ("Payment disputed" and "Dispute lost"), so set it before going live with orders.
 - `gcloud auth application-default login` so the script can use your credentials.
 
 ## Hiding from the app, and telling the owner

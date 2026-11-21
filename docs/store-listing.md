@@ -40,16 +40,18 @@ Join the conversation
 Rate pieces with one to five stars, leave comments, and get notified when someone rates or comments on your work or follows you.
 
 Buy directly from the maker
-Found something you love? Check out in seconds with secure payment through Stripe. Sellers see your shipping address and send the piece straight to you. After you buy, you can leave the seller a review.
+Found something you love? Check out in seconds with secure payment through Stripe. Sellers see your shipping address and send the piece straight to you. You are notified when it ships, can follow the tracking number, and can confirm when it arrives. After you buy, you can leave the seller a review.
 
 Sell your own art
-Connect a payout account with Stripe from Settings, then list pieces with a price and quantity. FrameOn keeps a 5% fee that includes payment processing.
+Connect a payout account with Stripe from Settings, then list pieces with a price and quantity. When a piece sells, mark the order shipped with a carrier and tracking number and the buyer is told. FrameOn keeps a 5% fee that includes payment processing.
 
 A safe community
 You can report any post, comment or user, and block anyone you do not want to see. Reports are reviewed within 24 hours, and there is no tolerance for objectionable content or abusive users. You can delete your account and content at any time from Settings.
 ```
 
 **What's New (2.0.0):** FrameOn has been rebuilt from the ground up: a faster, cleaner design, secure checkout with Stripe, seller payouts, ratings and reviews, notifications, and tools to report and block. Existing accounts from the old version need to create a new account.
+
+**What's New (next store release, with the order screens):** Orders now show their progress. Sellers add a tracking number when they ship, buyers get a notification, can follow the package and confirm delivery, and refunds and payment problems are shown on the order. The 2.0.0 text above is what is live; the order screens themselves can also arrive as an over-the-air update, which does not show "What's New".
 
 **Age rating questionnaire:** Contains user-generated content: **Yes** (moderated: report, block, terms, 24 hour review). Unrestricted web access: No. Gambling, contests: No. Alcohol, tobacco, drugs: None. Violence, sexual content, profanity, horror: None in the app itself (user-generated content is the only exposure). Expect 12+ or 17+ depending on how Apple weighs UGC.
 

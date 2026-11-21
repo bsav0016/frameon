@@ -10,7 +10,7 @@ OUT = os.path.join(HERE, "..", "ios")
 SS = 2  # supersampling for smooth shapes
 FONT = r"C:\Windows\Fonts\segoeuib.ttf"
 
-NAMES = {"1-home": "01-home", "2-artwork": "02-artwork", "3-search": "03-search", "4-artist": "04-artist", "5-checkout": "05-checkout", "6-activity": "06-activity"}
+NAMES = {"1-home": "01-home", "2-artwork": "02-artwork", "3-search": "03-search", "4-artist": "04-artist", "5-checkout": "05-checkout", "6-activity": "06-activity", "7-order-tracking": "07-order-tracking", "8-ship-order": "08-ship-order"}
 
 
 def status_bar(width_px: int, color=(0, 0, 0, 255)) -> Image.Image:
