@@ -4,7 +4,9 @@
 //   node scripts/ops/setup-alerts.mjs --project frameonnew --email you@example.com \
 //     --billing-account 000000-AAAAAA-BBBBBB --budget 25 [--apply]
 //
-// Needs the gcloud CLI, signed in as someone who may edit monitoring, billing budgets and Firestore.
+// Needs the gcloud CLI, signed in (the active account) as someone who may edit monitoring, billing budgets and Firestore.
+// It uses only commands every gcloud install has: no alpha or beta components. Notification channels go through
+// the Monitoring REST API with gcloud's access token.
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -41,18 +43,26 @@ const run = (args) => {
   if (a.apply) gcloud(args);
 };
 
-// 1. Email channel
-let channel = (json(['beta', 'monitoring', 'channels', 'list']) ?? []).find((c) => c.displayName === CHANNEL_NAME);
+// 1. Email channel (the gcloud command group for channels is not generally available, so use the REST API)
+const api = async (method, body) => {
+  const token = gcloud(['auth', 'print-access-token']).trim();
+  const res = await fetch(`https://monitoring.googleapis.com/v3/projects/${a.project}/notificationChannels`, {
+    method,
+    headers: { Authorization: `Bearer ${token}`, 'x-goog-user-project': a.project, 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new Error(`Monitoring API ${method} failed (${res.status}): ${await res.text()}`);
+  return res.json();
+};
+let channel = ((await api('GET')).notificationChannels ?? []).find((c) => c.displayName === CHANNEL_NAME);
 if (channel) say(`channel exists: ${CHANNEL_NAME}`);
 else {
   say(`create email channel ${CHANNEL_NAME} -> ${a.email}`);
-  if (a.apply) {
-    channel = json(['beta', 'monitoring', 'channels', 'create', `--display-name=${CHANNEL_NAME}`, '--type=email', `--channel-labels=email_address=${a.email}`]);
-  }
+  if (a.apply) channel = await api('POST', { type: 'email', displayName: CHANNEL_NAME, labels: { email_address: a.email } });
 }
 
 // 2. Log-match alert policies
-const existing = new Set((json(['alpha', 'monitoring', 'policies', 'list']) ?? []).map((p) => p.displayName));
+const existing = new Set((json(['monitoring', 'policies', 'list']) ?? []).map((p) => p.displayName));
 const dir = mkdtempSync(join(tmpdir(), 'frameon-ops-'));
 ALERTS.forEach((alert, i) => {
   if (existing.has(alert.name)) return say(`alert exists: ${alert.name}`);
@@ -60,7 +70,7 @@ ALERTS.forEach((alert, i) => {
   if (!a.apply) return;
   const file = join(dir, `policy-${i}.json`);
   writeFileSync(file, JSON.stringify(policyJson(alert, channel.name), null, 2));
-  gcloud(['alpha', 'monitoring', 'policies', 'create', `--policy-from-file=${file}`, `--project=${a.project}`]);
+  gcloud(['monitoring', 'policies', 'create', `--policy-from-file=${file}`, `--project=${a.project}`]);
 });
 
 // 3. Budget
