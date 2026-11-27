@@ -1,4 +1,5 @@
-import { ORDER_STATUSES, orderSchema } from '../models';
+import contract from '../../../compat/app-contract.json';
+import { NOTIFICATION_TYPES, ORDER_STATUSES, orderSchema } from '../models';
 
 // The real firebase/firestore build is ESM that jest does not transform; the schema only needs Timestamp.toDate().
 jest.mock('firebase/firestore', () => {
@@ -58,5 +59,12 @@ describe('orderSchema', () => {
 
   it('rejects an unknown status', () => {
     expect(orderSchema.safeParse({ ...base, status: 'lost-in-space' }).success).toBe(false);
+  });
+});
+
+describe('deploy contract', () => {
+  it('never promises more than the app handles', () => {
+    for (const status of contract.orderStatuses) expect(ORDER_STATUSES).toContain(status);
+    for (const type of contract.notificationTypes) expect(NOTIFICATION_TYPES).toContain(type);
   });
 });

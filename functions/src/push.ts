@@ -2,12 +2,13 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 
+import { type NotificationType } from './contract';
 import { removalText } from './moderationLogic';
 
 const db = getFirestore();
 
 interface Item {
-  type: 'rating' | 'comment' | 'follow' | 'purchase' | 'removal' | 'order_refunded' | 'order_disputed' | 'order_shipped' | 'order_delivered';
+  type: NotificationType;
   targetType?: string;
   fromUid: string;
   fromUsername: string;
