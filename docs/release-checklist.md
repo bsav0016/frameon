@@ -38,12 +38,13 @@ Everything the code needs is done except the items below, which need your accoun
 - [ ] Have the Terms and Privacy text reviewed; update `TERMS_VERSION` in `functions/src/auth.ts` if they change.
 - [ ] Age rating: user-generated content, so answer the UGC questions honestly (report, block, 24h review, terms acceptance, account deletion are all implemented).
 - [ ] App Privacy answers: email, username, name, photos, user content, purchases and shipping address are collected and linked to the user; none used for tracking.
+- [ ] **Crash reporting build (2.1.0):** before submitting, set `EXPO_PUBLIC_SENTRY_DSN` and the Sentry upload variables for the EAS build (`docs/operations.md`), and update the answers: App Store Connect App Privacy (add Diagnostics, Crash Data, linked to the user, not for tracking) and the Play data safety form (app info and performance, crash logs and diagnostics). The wording is in `docs/store-listing.md`.
 - [ ] Review notes: give Apple a demo account and explain how to reach report, block and delete account (Settings). Selling needs Stripe test onboarding, so say sellers are optional.
 - [x] Screenshots, icon and feature graphic are in `store-assets/` (see its README). The iPhone images are web renders of the app; swap in real-device captures from the dev build if you prefer.
 - [ ] Upload: iPhone 6.9" set to App Store Connect, `store-assets/android/*` to the Play listing, `store-assets/icon/icon-1024.png` if asked for a marketing icon.
 
 ## 4. Before going live (security)
-- [ ] Deploy rules and functions: `npx firebase deploy --project frameonnew`.
+- [ ] Deploy rules and functions with the **Deploy backend** workflow (Actions tab; one-time setup in `docs/operations.md`). `npx firebase deploy --project frameonnew` from a machine with the local `.env` files still works as a fallback.
 - [ ] Firebase **App Check** (Play Integrity / App Attest) to stop non-app clients calling the backend. Needs a dev build, then enforce for Firestore, Storage and Functions.
 - [ ] Restrict the Firebase web API key to the app's bundle ID / package in Google Cloud console, credentials.
 - [ ] Alerts, budget, point-in-time recovery and daily backups: run `scripts/ops/setup-alerts.mjs` and do the restore drill (see `docs/operations.md`).
@@ -55,7 +56,7 @@ Everything the code needs is done except the items below, which need your accoun
 Code is merged (issue #29); nothing below is done until you do it. **Order matters:** installed app builds drop orders and notifications whose status or type they do not know, so the app goes first.
 
 1. **App first.** Publish the over-the-air update (`npm run update:preview`, check, then `npm run update:production`, see section 5) so installed 2.0.0 builds understand `shipped`, `delivered`, `disputed` and the new notification types. These changes are JavaScript only.
-2. **Functions, rules and indexes.** `npx firebase deploy --project frameonnew` (functions, Firestore rules, indexes). The new `autoCompleteOrders` schedule needs the **Cloud Scheduler API** enabled on the project (the deploy offers to enable it) and the `orders` `status` + `shippedAt` index to finish building (Firebase console, Firestore, Indexes) before the first scheduled run.
+2. **Functions, rules and indexes.** Run the **Deploy backend** workflow (or `npx firebase deploy --project frameonnew` as the fallback). Its compatibility check enforces step 1: it refuses a backend that writes values `compat/app-contract.json` does not list, so add the new statuses and types to the contract once the app update has reached people. The new `autoCompleteOrders` schedule needs the **Cloud Scheduler API** enabled on the project (the deploy offers to enable it) and the `orders` `status` + `shippedAt` index to finish building (Firebase console, Firestore, Indexes) before the first scheduled run.
 3. **Stripe webhook.** In the Stripe dashboard (live mode), add `charge.dispute.created` and `charge.dispute.closed` to the existing webhook endpoint's events. `charge.refunded` and `payment_intent.succeeded` are already subscribed.
 4. **Alerts.** `MODERATOR_UID` must be set (see `docs/moderation.md`); dispute alerts use it.
 5. **One real order, end to end** (this is also the outstanding purchase test above): buy the $1 piece, mark it shipped with a tracking number as the seller, confirm the buyer was notified, confirm delivery as the buyer, then refund it in the Stripe dashboard and check the order shows Refunded, the piece is back in stock only if it had not shipped, and both sides were notified.
@@ -69,7 +70,7 @@ Builds from 2.0.0 on include `expo-updates` and listen to the channel named in `
 | --- | --- |
 | Screens, copy, JavaScript, images bundled in the app | `npm run update:production`, reaches users on their next launch (applied on that launch if it downloads within 3 seconds, otherwise on the one after) |
 | A native library, new permissions, native `app.json` settings, a new Expo SDK | Store release with a new version number |
-| Cloud Functions, Firestore and Storage rules | `npx firebase deploy --project frameonnew`, not an app update |
+| Cloud Functions, Firestore and Storage rules | The **Deploy backend** workflow (`docs/operations.md`), not an app update |
 
 **Rule of thumb:** if the change could not run in the app that is already installed, it is a store release. When unsure, it is a store release. Dependabot bumps of native packages (Stripe, notifications, image picker and so on) go out as store releases.
 

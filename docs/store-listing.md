@@ -53,6 +53,8 @@ You can report any post, comment or user, and block anyone you do not want to se
 
 **What's New (next store release, with the order screens):** Orders now show their progress. Sellers add a tracking number when they ship, buyers get a notification, can follow the package and confirm delivery, and refunds and payment problems are shown on the order. The 2.0.0 text above is what is live; the order screens themselves can also arrive as an over-the-air update, which does not show "What's New".
 
+**What's New (2.1.0, the crash reporting build):** Fixes and stability improvements. FrameOn can now send anonymous crash reports so problems get fixed faster. Nothing personal is included; see the privacy policy.
+
 **Age rating questionnaire:** Contains user-generated content: **Yes** (moderated: report, block, terms, 24 hour review). Unrestricted web access: No. Gambling, contests: No. Alcohol, tobacco, drugs: None. Violence, sexual content, profanity, horror: None in the app itself (user-generated content is the only exposure). Expect 12+ or 17+ depending on how Apple weighs UGC.
 
 **App Privacy ("nutrition label"):** Data is linked to the user. Nothing is used for tracking and there is no third-party advertising or product analytics. **From the build that includes crash reporting (2.1.0):** also declare Diagnostics, Crash Data (linked to the user by an anonymous account id, used for App Functionality, not tracking). Crash reports go to Sentry, which acts as a service provider.
