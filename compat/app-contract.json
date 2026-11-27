@@ -1,0 +1,5 @@
+{
+  "note": "What the oldest app build we still support understands. Update this only after the app change that adds a value has reached people (store release or over-the-air update). The deploy workflow refuses to deploy backend code that writes anything not listed here.",
+  "orderStatuses": ["paid", "shipped", "delivered", "refunded", "disputed"],
+  "notificationTypes": ["rating", "comment", "follow", "purchase", "removal", "order_refunded", "order_disputed", "order_shipped", "order_delivered"]
+}

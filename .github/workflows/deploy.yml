@@ -1,0 +1,74 @@
+name: Deploy backend
+# Deploys Cloud Functions, Firestore rules and indexes, and Storage rules to the production Firebase project.
+# Run it by hand from the Actions tab, on main. See docs/operations.md for the one-time setup (keyless Google Cloud
+# sign-in, the `production` environment with a required reviewer, and the variables below).
+on:
+  workflow_dispatch:
+    inputs:
+      what:
+        description: What to deploy
+        type: choice
+        default: everything
+        options: [everything, functions only, rules and indexes only]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  # Everything CI checks, on exactly the commit being deployed.
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    # A branch or a pull request can run CI but never reach production.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Required reviewers on this environment are the approval step.
+    environment: production
+    permissions:
+      contents: read
+      id-token: write # keyless sign-in to Google Cloud (workload identity federation)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm ci --prefix functions
+      - run: npm run build --prefix functions
+
+      # The app-first rule: refuse to deploy a backend that writes order statuses or notification types
+      # the supported app builds do not understand (compat/app-contract.json).
+      - run: npm run check:compat
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      # The functions read these at deploy time. They are not in the repository.
+      - name: Write function parameters
+        env:
+          WEB_API_KEY: ${{ secrets.WEB_API_KEY }}
+          MODERATOR_UID: ${{ vars.MODERATOR_UID }}
+        run: |
+          test -n "$WEB_API_KEY" || { echo "Environment secret WEB_API_KEY is not set"; exit 1; }
+          printf 'WEB_API_KEY=%s\n' "$WEB_API_KEY" > functions/.env
+          printf 'MODERATOR_UID=%s\n' "$MODERATOR_UID" > functions/.env.frameonnew
+
+      - name: Deploy
+        env:
+          WHAT: ${{ inputs.what }}
+        run: |
+          case "$WHAT" in
+            "functions only") only="functions" ;;
+            "rules and indexes only") only="firestore,storage" ;;
+            *) only="functions,firestore,storage" ;;
+          esac
+          npx firebase deploy --project frameonnew --only "$only" --non-interactive

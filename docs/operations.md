@@ -79,3 +79,36 @@ Set it up once:
 6. Update the store privacy answers (see `docs/store-listing.md`) before submitting that build.
 
 To turn it off without a new build, publish an over-the-air update with `EXPO_PUBLIC_SENTRY_DSN` unset in your shell: the DSN is read when the JavaScript is bundled, so that update starts without reporting.
+
+## Deploying the backend (GitHub Actions)
+
+Actions tab, **Deploy backend**, Run workflow, on `main`. It runs everything CI runs on that commit, then waits for you to approve the `production` environment, then deploys functions, Firestore rules and indexes, and Storage rules to `frameonnew`. Nothing else deploys the backend; the manual `npx firebase deploy` still works from a machine that has the two local `.env` files (`functions/.env`, `functions/.env.frameonnew`) and is the fallback.
+
+**The app-first rule is enforced.** `compat/app-contract.json` lists the order statuses and notification types the oldest supported app build understands. Before deploying, `npm run check:compat` compares it with what the backend can write (`functions/src/contract.ts`) and stops the deploy if the backend would write anything else, because installed apps silently drop what they do not recognise. To add a new status or type:
+
+1. Add it to the app (`src/lib/models.ts`) and to the backend (`functions/src/contract.ts`) and merge.
+2. Ship the app change to people (store release or over-the-air update).
+3. Add the value to `compat/app-contract.json` in its own small PR (a test checks the contract never lists something the app cannot handle).
+4. Run the deploy workflow.
+
+### One-time setup
+
+Sign-in to Google Cloud is keyless (workload identity federation): no service account key is stored in GitHub. Run these once, replacing `PROJECT_NUMBER` with the number shown on the Google Cloud console home page for `frameonnew`:
+
+```
+gcloud iam workload-identity-pools create github --location=global --project=frameonnew
+gcloud iam workload-identity-pools providers create-oidc frameon-deploy --location=global --workload-identity-pool=github --issuer-uri=https://token.actions.githubusercontent.com --attribute-mapping="google.subject=assertion.sub" --attribute-condition="assertion.sub=='repo:bsav0016/frameon:environment:production'" --project=frameonnew
+gcloud iam service-accounts create github-deployer --project=frameonnew
+gcloud iam service-accounts add-iam-policy-binding github-deployer@frameonnew.iam.gserviceaccount.com --role=roles/iam.workloadIdentityUser --member="principal://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github/subject/repo:bsav0016/frameon:environment:production" --project=frameonnew
+gcloud projects add-iam-policy-binding frameonnew --member="serviceAccount:github-deployer@frameonnew.iam.gserviceaccount.com" --role=roles/firebase.admin
+gcloud projects add-iam-policy-binding frameonnew --member="serviceAccount:github-deployer@frameonnew.iam.gserviceaccount.com" --role=roles/iam.serviceAccountUser
+```
+
+The condition means only a job running in this repository's `production` environment can sign in; a pull request or another branch cannot. `roles/firebase.admin` is a broad starting point that is known to work for Firebase deploys; narrow it later if you wish (functions, rules and index admin roles).
+
+Then in GitHub, repository Settings, Environments, **New environment** named `production`:
+- Required reviewers: yourself. (This is the approval step.) Deployment branches: `main` only.
+- Environment variables: `GCP_WORKLOAD_IDENTITY_PROVIDER` = `projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github/providers/frameon-deploy`, `GCP_SERVICE_ACCOUNT` = `github-deployer@frameonnew.iam.gserviceaccount.com`, `MODERATOR_UID` = your moderator uid (see `docs/moderation.md`).
+- Environment secret: `WEB_API_KEY` (the Firebase web API key the sign-in function uses; it is the value in your local `functions/.env`).
+
+If something goes wrong, the first run of the workflow is where to find out: the sign-in and deploy steps print the error. A deploy that fails part way leaves the functions that did deploy in place; run it again.

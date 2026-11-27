@@ -97,8 +97,11 @@ export const orderSchema = z.object({
 });
 export type Order = z.infer<typeof orderSchema> & { id: string };
 
+/** Every notification type this build can show. Keep in step with functions/src/contract.ts (see compat/app-contract.json). */
+export const NOTIFICATION_TYPES = ['rating', 'comment', 'follow', 'purchase', 'removal', 'order_refunded', 'order_disputed', 'order_shipped', 'order_delivered'] as const;
+
 export const notificationSchema = z.object({
-  type: z.enum(['rating', 'comment', 'follow', 'purchase', 'removal', 'order_refunded', 'order_disputed', 'order_shipped', 'order_delivered']),
+  type: z.enum(NOTIFICATION_TYPES),
   // For removal notices: what was removed. Other notifications leave it out.
   targetType: z.enum(['post', 'comment', 'avatar']).default('post'),
   fromUid: z.string(),
