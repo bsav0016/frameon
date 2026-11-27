@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
@@ -7,13 +7,22 @@ import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { ErrorFallback } from '@/components/error-fallback';
 import { ToastProvider } from '@/components/ui';
 import { useTheme } from '@/hooks/use-theme';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { handleNotificationTap, registerForPush } from '@/lib/push';
+import { initReporting, onQueryError, setReportingUser } from '@/lib/reporting';
 import { StripeGate } from '@/lib/stripe';
 
+initReporting();
 SplashScreen.preventAutoHideAsync();
+
+// Expo Router shows this instead of a white screen when a screen throws while rendering.
+export function ErrorBoundary(props: { error: Error; retry: () => Promise<void> }) {
+  return <ErrorFallback error={props.error} retry={() => void props.retry()} />;
+}
+
 
 function RootNavigator() {
   const { user, isLoading } = useAuth();
@@ -23,6 +32,8 @@ function RootNavigator() {
   }, [isLoading]);
 
   const uid = user?.uid;
+
+  useEffect(() => setReportingUser(uid ?? null), [uid]);
 
   useEffect(() => {
     if (uid) registerForPush(uid);
@@ -73,7 +84,7 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
-  const [queryClient] = useState(() => new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } }));
+  const [queryClient] = useState(() => new QueryClient({ queryCache: new QueryCache({ onError: onQueryError }), defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } }));
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>

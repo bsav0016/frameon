@@ -87,6 +87,17 @@ function main() {
     console.error('\neas update failed. Nothing was published unless eas-cli said so above.');
     process.exit(1);
   }
+
+  // Lets crash reports from this update show real file names and lines. Optional: needs SENTRY_AUTH_TOKEN,
+  // SENTRY_ORG and SENTRY_PROJECT in the environment (docs/operations.md). The bundle in dist/ is the one just published.
+  if (process.env.SENTRY_AUTH_TOKEN) {
+    if (!run(npx, ['sentry-expo-upload-sourcemaps', 'dist'])) {
+      console.error('\nThe update is published, but uploading its source maps to Sentry failed. Crash stack traces from it will be unreadable.');
+      process.exit(1);
+    }
+  } else {
+    console.log('\nSENTRY_AUTH_TOKEN is not set, so source maps were not uploaded (crash reports from this update will show minified code).');
+  }
 }
 
 main();

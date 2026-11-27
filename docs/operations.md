@@ -60,3 +60,22 @@ Storage (photos) has no backup here. Deleting a post deletes its photo on purpos
 2. Payment webhook: also open Stripe, Developers, Webhooks, and look for failed deliveries. Stripe retries for days; fix the cause and the retries land. `docs/release-checklist.md` has the order flow to verify afterwards.
 3. Scheduler: shipped orders stay shipped until the next daily run completes them; nothing is lost.
 4. Budget: open Billing, Reports, and filter by service to find the cause before raising the limit.
+
+## Crash and error reporting (Sentry)
+
+The app reports crashes and unexpected errors to [Sentry](https://sentry.io). It is **off** until you set it up, and it is off in development builds and on the web.
+
+What is sent: the error and where it happened, the device model, OS and app version, and the anonymous account id (the Firebase uid). Not sent: email, name, address, photos, IP address or request details; email addresses that appear inside an error message are replaced with `[email]` before sending (`src/lib/reporting.ts`). The in-app privacy policy says this.
+
+What counts as a report: a screen that crashes while rendering (the person sees "Something went wrong, try again"), a crash in native or JavaScript code, a failed data query that is not a normal offline or permission case, and any action that fails with the generic "Something went wrong" message (expected failures such as a taken username or no connection are not reported).
+
+Set it up once:
+
+1. Create a Sentry account and a React Native project. Copy its DSN (a URL; it ends up inside the app, so it is not a secret).
+2. Set it for builds: `eas env:create --name EXPO_PUBLIC_SENTRY_DSN --value <dsn> --environment production --visibility plaintext` (and `preview`).
+3. For readable stack traces, give EAS builds and update publishing the upload settings: `SENTRY_ORG` and `SENTRY_PROJECT` (plaintext) and `SENTRY_AUTH_TOKEN` (a Sentry organisation token; keep it secret: `eas env:create ... --visibility secret`). The native build then uploads its source maps. `npm run update:production` uploads an update's source maps itself when `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_PROJECT` are set in your shell.
+4. Reporting needs a native module, so it reaches people only with a **store build** (the next version, 2.1.0); an over-the-air update to 2.0.0 cannot add it.
+5. In Sentry, add an alert rule that emails you for a new issue, then crash the app once on purpose in a test build and check the report arrives with a readable stack.
+6. Update the store privacy answers (see `docs/store-listing.md`) before submitting that build.
+
+To turn it off without a new build, publish an over-the-air update with `EXPO_PUBLIC_SENTRY_DSN` unset in your shell: the DSN is read when the JavaScript is bundled, so that update starts without reporting.
