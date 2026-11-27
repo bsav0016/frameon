@@ -30,4 +30,5 @@ jobs:
       - run: npm test --prefix functions
       # Payment webhook tests run against the Firestore emulator (Java is preinstalled on the runner).
       - run: npm run test:functions
+      - run: npm run test:ops
       - run: npm test -- --ci

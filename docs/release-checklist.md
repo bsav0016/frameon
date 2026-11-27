@@ -46,7 +46,7 @@ Everything the code needs is done except the items below, which need your accoun
 - [ ] Deploy rules and functions: `npx firebase deploy --project frameonnew`.
 - [ ] Firebase **App Check** (Play Integrity / App Attest) to stop non-app clients calling the backend. Needs a dev build, then enforce for Firestore, Storage and Functions.
 - [ ] Restrict the Firebase web API key to the app's bundle ID / package in Google Cloud console, credentials.
-- [ ] Budget alert in Google Cloud billing.
+- [ ] Alerts, budget, point-in-time recovery and daily backups: run `scripts/ops/setup-alerts.mjs` and do the restore drill (see `docs/operations.md`).
 - [ ] Moderation: set `MODERATOR_UID` for report alerts and deploy functions (see `docs/moderation.md`); act on alerts with `functions/scripts/moderate.mjs` within 24 hours.
 - [ ] Remove any leftover `zz_test_*` accounts from Authentication.
 
