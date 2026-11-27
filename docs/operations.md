@@ -93,13 +93,13 @@ Actions tab, **Deploy backend**, Run workflow, on `main`. It runs everything CI 
 
 ### One-time setup
 
-Sign-in to Google Cloud is keyless (workload identity federation): no service account key is stored in GitHub. Run these once, replacing `PROJECT_NUMBER` with the number shown on the Google Cloud console home page for `frameonnew`:
+Sign-in to Google Cloud is keyless (workload identity federation): no service account key is stored in GitHub. GitHub now puts the owner and repository **ids** in the sign-in token's subject (`repo:OWNER@OWNER_ID/REPO@REPO_ID:environment:production`), so the commands below use that form. Check yours with `gh api repos/bsav0016/frameon/actions/oidc/customization/sub` (the `sub_claim_prefix`); a condition written with the plain names is rejected with "The given credential is rejected by the attribute condition". Run these once, replacing `PROJECT_NUMBER` with the number shown on the Google Cloud console home page for `frameonnew`:
 
 ```
 gcloud iam workload-identity-pools create github --location=global --project=frameonnew
-gcloud iam workload-identity-pools providers create-oidc frameon-deploy --location=global --workload-identity-pool=github --issuer-uri=https://token.actions.githubusercontent.com --attribute-mapping="google.subject=assertion.sub" --attribute-condition="assertion.sub=='repo:bsav0016/frameon:environment:production'" --project=frameonnew
+gcloud iam workload-identity-pools providers create-oidc frameon-deploy --location=global --workload-identity-pool=github --issuer-uri=https://token.actions.githubusercontent.com --attribute-mapping="google.subject=assertion.sub" --attribute-condition="assertion.sub=='repo:bsav0016@95955909/frameon@1453503861:environment:production'" --project=frameonnew
 gcloud iam service-accounts create github-deployer --project=frameonnew
-gcloud iam service-accounts add-iam-policy-binding github-deployer@frameonnew.iam.gserviceaccount.com --role=roles/iam.workloadIdentityUser --member="principal://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github/subject/repo:bsav0016/frameon:environment:production" --project=frameonnew
+gcloud iam service-accounts add-iam-policy-binding github-deployer@frameonnew.iam.gserviceaccount.com --role=roles/iam.workloadIdentityUser --member="principal://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github/subject/repo:bsav0016@95955909/frameon@1453503861:environment:production" --project=frameonnew
 gcloud projects add-iam-policy-binding frameonnew --member="serviceAccount:github-deployer@frameonnew.iam.gserviceaccount.com" --role=roles/firebase.admin
 gcloud projects add-iam-policy-binding frameonnew --member="serviceAccount:github-deployer@frameonnew.iam.gserviceaccount.com" --role=roles/iam.serviceAccountUser
 ```
