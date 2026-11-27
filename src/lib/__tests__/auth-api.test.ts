@@ -2,6 +2,8 @@ import { friendlyError, retryAfterSeconds, validateEmail, validatePassword, vali
 
 jest.mock('../firebase', () => ({ auth: {}, functions: {} }));
 jest.mock('../push', () => ({ unregisterPush: jest.fn() }));
+const mockReport = jest.fn();
+jest.mock('../reporting', () => ({ reportError: (...a: unknown[]) => mockReport(...a) }));
 jest.mock('firebase/auth', () => ({}));
 jest.mock('firebase/functions', () => ({}));
 
@@ -35,5 +37,16 @@ describe('auth validation', () => {
     expect(friendlyError({ code: 'functions/resource-exhausted', message: 'Try again in 15 minutes. [429]' })).toBe('Try again in 15 minutes.');
     expect(friendlyError({ code: 'auth/network-request-failed' })).toMatch('connection');
     expect(friendlyError(new Error('stack trace secrets'))).toBe('Something went wrong. Please try again.');
+  });
+
+  it('reports only the failures the app did not expect', () => {
+    mockReport.mockClear();
+    friendlyError({ code: 'functions/already-exists', message: 'That username is taken.' });
+    friendlyError({ code: 'auth/network-request-failed' });
+    friendlyError({ code: 'auth/user-disabled' });
+    expect(mockReport).not.toHaveBeenCalled();
+    const odd = new TypeError('x is undefined');
+    friendlyError(odd);
+    expect(mockReport).toHaveBeenCalledWith(odd, 'unexpected error');
   });
 });

@@ -57,7 +57,11 @@ export const PRIVACY: LegalSection[] = [
   },
   {
     heading: 'Service providers',
-    body: 'FrameOn runs on Google Firebase (authentication, database, file storage and server functions) and Stripe (payments).',
+    body: 'FrameOn runs on Google Firebase (authentication, database, file storage and server functions), Stripe (payments) and Sentry (crash and error reports).',
+  },
+  {
+    heading: 'Crash reports',
+    body: 'If the app crashes or hits an unexpected error, it sends a report to Sentry with the error, what the app was doing, your device model and operating system, the app version and an anonymous account id. Reports never include your email, name, address, photos or messages, and they are used only to find and fix bugs.',
   },
   {
     heading: 'Your choices',

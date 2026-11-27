@@ -55,7 +55,7 @@ You can report any post, comment or user, and block anyone you do not want to se
 
 **Age rating questionnaire:** Contains user-generated content: **Yes** (moderated: report, block, terms, 24 hour review). Unrestricted web access: No. Gambling, contests: No. Alcohol, tobacco, drugs: None. Violence, sexual content, profanity, horror: None in the app itself (user-generated content is the only exposure). Expect 12+ or 17+ depending on how Apple weighs UGC.
 
-**App Privacy ("nutrition label"):** Data is linked to the user. Nothing is used for tracking and there is no third-party advertising or analytics.
+**App Privacy ("nutrition label"):** Data is linked to the user. Nothing is used for tracking and there is no third-party advertising or product analytics. **From the build that includes crash reporting (2.1.0):** also declare Diagnostics, Crash Data (linked to the user by an anonymous account id, used for App Functionality, not tracking). Crash reports go to Sentry, which acts as a service provider.
 
 | Data type | Collected | Purpose |
 | --- | --- | --- |
@@ -119,6 +119,7 @@ Purchasing: checkout opens Stripe's payment sheet. <Say here whether the backend
   - Financial info: payment info (handled by Stripe), purchase history.
   - App activity / other user-generated content: comments, ratings, bio.
   - Device or other IDs: push notification token.
+- **From the build that includes crash reporting (2.1.0):** App info and performance: crash logs and diagnostics (device model, OS version, app version, anonymous account id), collected, not shared for third parties' own use, used for app functionality (fixing bugs).
 - Purposes: app functionality, account management. Not for advertising or analytics.
 - Data encrypted in transit: Yes.
 - Users can request deletion: Yes. In the app (Settings > Delete account) and at https://bsav0016.github.io/frameon/support/#delete-account

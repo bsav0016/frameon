@@ -3,6 +3,7 @@ import { httpsCallable } from 'firebase/functions';
 
 import { auth, functions } from './firebase';
 import { unregisterPush } from './push';
+import { reportError } from './reporting';
 
 export const USERNAME_PATTERN = /^[A-Za-z0-9_.]{3,20}$/;
 export const MIN_PASSWORD = 8;
@@ -26,6 +27,8 @@ export function friendlyError(e: unknown): string {
   // The Firebase client appends the HTTP status to every callable error ("... [401]"); people should not see it.
   if (err?.code?.startsWith('functions/') && err.message) return err.message.replace(/\s*\[\d{3}\]$/, '');
   if (err?.code === 'auth/network-request-failed') return 'No connection. Check your internet and try again.';
+  // Anything that reaches this line is not a failure the app expected, so it is worth a report.
+  if (!err?.code?.startsWith('auth/')) reportError(e, 'unexpected error');
   return 'Something went wrong. Please try again.';
 }
 
